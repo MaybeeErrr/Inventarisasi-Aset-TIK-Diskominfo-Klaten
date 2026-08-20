@@ -192,6 +192,16 @@
   .donut-halo{position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle, rgba(139,92,246,.08), transparent 72%);z-index:0;}
   @media (max-width:640px){ .status-grid{grid-template-columns:1fr;} }
 
+  /* Panel gabungan "Ringkasan Aset" — Kategori & Status dalam satu kartu, dipisah garis pembatas */
+  .ringkasan-grid{display:grid;grid-template-columns:1fr 1px 1fr;gap:24px;align-items:start;}
+  .ringkasan-divider{background:var(--line);align-self:stretch;}
+  .ringkasan-col{min-width:0;}
+  .rk-label{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:14px;}
+  @media (max-width:900px){
+    .ringkasan-grid{grid-template-columns:1fr;gap:22px;}
+    .ringkasan-divider{width:100%;height:1px;}
+  }
+
   .two-col{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;}
 
   .donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
@@ -1088,56 +1098,60 @@ function renderDashboard(){
       </div>
       <div class="vb-sub">Estimasi nilai perolehan dari<br>${s.total} aset terdata ${icon('arrowRight')}</div>
     </div>
-    <div class="two-col">
-      <div class="panel">
-        <h2><span style="display:flex;align-items:center;gap:7px;"><span style="width:16px;height:16px;color:var(--blue-500);display:inline-flex;">${icon('layers')}</span>Aset per Kategori</span><span class="panel-meta">${Object.keys(s.byKategori).length} kategori</span></h2>
-        ${Object.keys(s.byKategori).length ? `
-        <div class="kat-chart">
-          ${Object.entries(s.byKategori).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
-            const pct = Math.max(4, Math.round(v/maxK*100));
-            return `
-            <div class="kat-col" title="${k}: ${v} aset">
-              <div class="kat-val">${v}</div>
-              <div class="kat-bar-wrap">
-                <div class="kat-bar" style="height:${pct}%;"></div>
-              </div>
-              <div class="kat-lbl">${k}</div>
-            </div>`;
-          }).join('')}
-        </div>` : '<p style="color:var(--ink-soft);font-size:13px;">Belum ada data.</p>'}
-      </div>
-      <div class="panel">
-        <h2><span style="display:flex;align-items:center;gap:7px;"><span style="width:16px;height:16px;color:var(--good);display:inline-flex;">${icon('check')}</span>Aset per Status</span><span class="panel-meta">${s.total} aset</span></h2>
-        ${s.total ? `
-        <div class="donut-wrap">
-          <div style="position:relative;width:200px;height:200px;flex-shrink:0;">
-            <div class="donut-halo"></div>
-            ${svgDonut(s.byStatus, s.total, 200, 200)}
-            <div class="donut-center">
-              <div class="n">${s.total}</div>
-              <div class="t">TOTAL ASET</div>
-            </div>
-          </div>
-          <div class="status-grid">
-            ${Object.entries(s.byStatus).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
-              const cfg = STATUS_CFG[k]||{};
-              const hex = cfg.hex || '#8A93A6';
-              const pct = Math.round(v/s.total*100);
+    <div class="panel">
+      <h2>Ringkasan Aset <span class="panel-meta">${Object.keys(s.byKategori).length} kategori &middot; ${s.total} aset</span></h2>
+      <div class="ringkasan-grid">
+        <div class="ringkasan-col">
+          <div class="rk-label"><span style="width:14px;height:14px;color:var(--blue-500);display:inline-flex;">${icon('layers')}</span>Per Kategori</div>
+          ${Object.keys(s.byKategori).length ? `
+          <div class="kat-chart">
+            ${Object.entries(s.byKategori).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+              const pct = Math.max(4, Math.round(v/maxK*100));
               return `
-              <div class="status-tile" style="color:${hex}">
-                <div class="st-top">
-                  <div class="st-icon">${icon(cfg.icon||'check')}</div>
-                  <div class="st-info">
-                    <div class="st-name">${k}</div>
-                    <div class="st-count">${v} aset</div>
-                  </div>
-                  <div class="st-pct">${pct}%</div>
+              <div class="kat-col" title="${k}: ${v} aset">
+                <div class="kat-val">${v}</div>
+                <div class="kat-bar-wrap">
+                  <div class="kat-bar" style="height:${pct}%;"></div>
                 </div>
-                <div class="st-bar"><div class="st-bar-fill" style="width:${pct}%"></div></div>
+                <div class="kat-lbl">${k}</div>
               </div>`;
             }).join('')}
-          </div>
-        </div>` : '<p style="color:var(--ink-soft);font-size:13px;">Belum ada data.</p>'}
+          </div>` : '<p style="color:var(--ink-soft);font-size:13px;">Belum ada data.</p>'}
+        </div>
+        <div class="ringkasan-divider"></div>
+        <div class="ringkasan-col">
+          <div class="rk-label"><span style="width:14px;height:14px;color:var(--good);display:inline-flex;">${icon('check')}</span>Per Status</div>
+          ${s.total ? `
+          <div class="donut-wrap">
+            <div style="position:relative;width:172px;height:172px;flex-shrink:0;">
+              <div class="donut-halo"></div>
+              ${svgDonut(s.byStatus, s.total, 172, 172)}
+              <div class="donut-center">
+                <div class="n">${s.total}</div>
+                <div class="t">TOTAL ASET</div>
+              </div>
+            </div>
+            <div class="status-grid">
+              ${Object.entries(s.byStatus).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+                const cfg = STATUS_CFG[k]||{};
+                const hex = cfg.hex || '#8A93A6';
+                const pct = Math.round(v/s.total*100);
+                return `
+                <div class="status-tile" style="color:${hex}">
+                  <div class="st-top">
+                    <div class="st-icon">${icon(cfg.icon||'check')}</div>
+                    <div class="st-info">
+                      <div class="st-name">${k}</div>
+                      <div class="st-count">${v} aset</div>
+                    </div>
+                    <div class="st-pct">${pct}%</div>
+                  </div>
+                  <div class="st-bar"><div class="st-bar-fill" style="width:${pct}%"></div></div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>` : '<p style="color:var(--ink-soft);font-size:13px;">Belum ada data.</p>'}
+        </div>
       </div>
     </div>
     <div class="panel">
