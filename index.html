@@ -434,6 +434,12 @@ const KATEGORI_ICON = {
 };
 const STORAGE_KEY = 'aset_tik_diskominfo_klaten_v2';
 
+// Tempel link gambar logo di sini (di antara tanda kutip) kalau ingin
+// mengganti kotak "TIK" di pojok kiri atas dengan gambar/logo sendiri.
+// Contoh: 'https://contoh.com/logo-diskominfo.png'
+// Kosongkan lagi ('') untuk kembali ke tampilan teks "TIK" seperti semula.
+const LOGO_URL = '';
+
 let state = {
   assets: [],
   loaded: false,
@@ -974,7 +980,7 @@ function renderSidebar(){
   return `
   <div class="sidebar">
     <div class="brand">
-      <div class="brand-mark">TIK</div>
+      <div class="brand-mark">${LOGO_URL ? `<img src="${LOGO_URL}" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">` : 'TIK'}</div>
       <div class="brand-text">
         <div class="t1">Diskominfo Klaten</div>
         <div class="t2">Inventarisasi Aset TIK</div>
