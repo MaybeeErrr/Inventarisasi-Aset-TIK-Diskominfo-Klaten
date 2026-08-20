@@ -176,21 +176,16 @@
   }
 
   /* Kartu status "Aset per Status" — pengganti daftar baris polos, memakai palet semantik dashboard (good/warn/bad/off) yang sama dengan kartu ringkasan di atas */
-  .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-width:230px;}
-  .status-tile{position:relative;background:var(--paper);border-radius:14px;padding:12px 14px 13px;overflow:hidden;transition:transform .16s ease,box-shadow .16s ease;}
-  .status-tile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:currentColor;border-radius:0 3px 3px 0;}
-  .status-tile:hover{transform:translateY(-2px);box-shadow:0 10px 22px -8px rgba(30,27,75,.18);}
-  .st-top{display:flex;align-items:flex-start;gap:9px;margin-bottom:11px;}
-  .st-icon{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb, currentColor 15%, white);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(30,27,75,.06);}
-  .st-icon svg{width:14px;height:14px;color:currentColor;}
-  .st-info{flex:1;min-width:0;}
-  .st-name{font-weight:700;font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .st-count{font-size:10.5px;color:var(--ink-soft);margin-top:1px;}
-  .st-pct{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px;color:currentColor;flex-shrink:0;letter-spacing:-.01em;}
-  .st-bar{height:5px;border-radius:4px;background:rgba(30,27,75,.07);overflow:hidden;}
-  .st-bar-fill{height:100%;border-radius:4px;background:currentColor;transition:width .7s cubic-bezier(.22,.9,.3,1);}
+  .status-list{display:flex;flex-direction:column;gap:7px;flex:1;min-width:230px;}
+  .status-row{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:12px;background:var(--paper);transition:background .15s ease,transform .15s ease;}
+  .status-row:hover{background:color-mix(in srgb, currentColor 8%, var(--paper));transform:translateX(2px);}
+  .sr-icon{width:32px;height:32px;border-radius:10px;background:color-mix(in srgb, currentColor 15%, white);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:currentColor;}
+  .sr-icon svg{width:15px;height:15px;color:currentColor;}
+  .sr-body{flex:1;min-width:0;}
+  .sr-name{font-weight:700;font-size:12.5px;color:var(--ink);line-height:1.25;}
+  .sr-count{font-size:10.5px;color:var(--ink-soft);margin-top:1px;}
+  .sr-pct{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;color:currentColor;flex-shrink:0;letter-spacing:-.01em;}
   .donut-halo{position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle, rgba(139,92,246,.08), transparent 72%);z-index:0;}
-  @media (max-width:640px){ .status-grid{grid-template-columns:1fr;} }
 
   /* Panel gabungan "Ringkasan Aset" — Kategori & Status dalam satu kartu, dipisah garis pembatas */
   .ringkasan-grid{display:grid;grid-template-columns:1fr 1px 1fr;gap:24px;align-items:start;}
@@ -986,57 +981,60 @@ function shadeColor(hex, percent){
 }
 
 function svgDonut(byStatus, total, w, h){
-  // Diagram donat 2D yang bersih: tiap irisan punya celah kecil + gradasi warna,
-  // label persentase selalu ditaruh DI DALAM irisannya sendiri (tidak ada garis
-  // penunjuk yang bisa bertabrakan/tumpang tindih seperti versi 3D sebelumnya).
-  // Irisan yang terlalu tipis untuk memuat teks cukup diberi warna — rincian
-  // persentase & jumlahnya sudah tersedia jelas di legenda di sampingnya.
+  // Ring chart modern: strip tebal berujung membulat (rounded cap), ada "track"
+  // abu-abu tipis sebagai dasar (pola umum di dashboard modern seperti Apple
+  // Activity / Google Material), celah antar-segmen otomatis rapi karena
+  // linecap bulat, dan gradasi arah radial supaya tampak lebih premium & 3D-tipis.
   w = w || 240; h = h || 240;
   const cx = w / 2, cy = h / 2;
-  const outerR = Math.min(w, h) / 2 - 10;
-  const innerR = outerR * 0.6;
-  const pad = 0.05; // celah antar-irisan (radian)
+  const strokeW = Math.min(w, h) * 0.155;
+  const R = Math.min(w, h) / 2 - strokeW / 2 - 28;
+  const toRad = d => (d - 90) * Math.PI / 180;
+  const pt = (deg, r) => [cx + r * Math.cos(toRad(deg)), cy + r * Math.sin(toRad(deg))];
 
   const entries = Object.entries(byStatus).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
   const n = entries.length;
-  let acc = -Math.PI / 2; // mulai dari atas
+  const gapDeg = n > 1 ? 10 : 0;
+  const usable = 360 - gapDeg * n;
+
+  let angle = 0;
   const segs = [], labels = [], defs = [];
 
   entries.forEach(([k, v], i) => {
     const hex = (STATUS_CFG[k] || {}).hex || '#8A93A6';
     const frac = total ? v / total : 0;
     if(frac <= 0) return;
-    const a0 = acc, a1 = acc + frac * Math.PI * 2;
-    acc = a1;
-    const g = n > 1 ? pad / 2 : 0;
-    const sa = a0 + g, ea = Math.max(a1 - g, sa + 0.001);
-    const mid = (sa + ea) / 2;
+    const sweep = frac * usable;
+    const a0 = angle, a1 = angle + sweep;
+    angle = a1 + gapDeg;
+    const mid = (a0 + a1) / 2;
     const pct = Math.round(frac * 100);
-    const large = (ea - sa) > Math.PI ? 1 : 0;
+    const large = sweep > 180 ? 1 : 0;
 
-    const pt = (ang, r) => [cx + r * Math.cos(ang), cy + r * Math.sin(ang)];
-    const [ox0, oy0] = pt(sa, outerR), [ox1, oy1] = pt(ea, outerR);
-    const [ix1, iy1] = pt(ea, innerR), [ix0, iy0] = pt(sa, innerR);
+    const [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R);
     const gradId = `dseg-${i}`;
 
-    defs.push(`<linearGradient id="${gradId}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="${shadeColor(hex, 0.2)}"/>
-      <stop offset="100%" stop-color="${hex}"/>
+    defs.push(`<linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${shadeColor(hex, 0.22)}"/>
+      <stop offset="100%" stop-color="${shadeColor(hex, -0.08)}"/>
     </linearGradient>`);
 
-    segs.push(`<path class="donut-seg" d="M ${ox0} ${oy0} A ${outerR} ${outerR} 0 ${large} 1 ${ox1} ${oy1} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 ${large} 0 ${ix0} ${iy0} Z" fill="url(#${gradId})" stroke="#fff" stroke-width="2" stroke-linejoin="round"><title>${k}: ${pct}% (${v} aset)</title></path>`);
+    segs.push(`<path class="donut-seg" d="M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1}" fill="none" stroke="url(#${gradId})" stroke-width="${strokeW}" stroke-linecap="round"><title>${k}: ${pct}% (${v} aset)</title></path>`);
 
-    // Hanya tampilkan label di atas irisan jika muat (>=6%); irisan sangat tipis
-    // cukup diwakili warnanya saja + tooltip on-hover, biar tidak sesak/tumpang tindih.
-    if(frac >= 0.06){
-      const [lx, ly] = pt(mid, (outerR + innerR) / 2);
-      const fs = frac >= 0.18 ? 14 : 11.5;
-      labels.push(`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="${fs}" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.28); stroke-width:2.5px;">${pct}%</text>`);
+    // Label persentase hanya untuk segmen yang cukup besar agar tidak sesak;
+    // ditaruh sedikit di luar cincin dengan chip putih supaya selalu terbaca
+    // di atas warna apa pun.
+    if(frac >= 0.08){
+      const [lx, ly] = pt(mid, R + strokeW / 2 + 15);
+      const fs = frac >= 0.22 ? 13 : 11;
+      const tw = String(pct).length > 2 ? 30 : 24;
+      labels.push(`<g><rect x="${lx - tw/2}" y="${ly - 10}" width="${tw}" height="18" rx="9" fill="#fff" style="filter:drop-shadow(0 2px 4px rgba(30,27,75,.14));"/><text x="${lx}" y="${ly - 1}" text-anchor="middle" dominant-baseline="middle" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="${fs}" fill="${hex}">${pct}%</text></g>`);
     }
   });
 
   return `<svg class="donut-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
     <defs>${defs.join('')}</defs>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#EEECF7" stroke-width="${strokeW}"/>
     ${segs.join('')}
     ${labels.join('')}
   </svg>`;
@@ -1131,22 +1129,19 @@ function renderDashboard(){
                 <div class="t">TOTAL ASET</div>
               </div>
             </div>
-            <div class="status-grid">
+            <div class="status-list">
               ${Object.entries(s.byStatus).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
                 const cfg = STATUS_CFG[k]||{};
                 const hex = cfg.hex || '#8A93A6';
                 const pct = Math.round(v/s.total*100);
                 return `
-                <div class="status-tile" style="color:${hex}">
-                  <div class="st-top">
-                    <div class="st-icon">${icon(cfg.icon||'check')}</div>
-                    <div class="st-info">
-                      <div class="st-name">${k}</div>
-                      <div class="st-count">${v} aset</div>
-                    </div>
-                    <div class="st-pct">${pct}%</div>
+                <div class="status-row" style="color:${hex}" title="${k}: ${v} aset (${pct}%)">
+                  <div class="sr-icon">${icon(cfg.icon||'check')}</div>
+                  <div class="sr-body">
+                    <div class="sr-name">${k}</div>
+                    <div class="sr-count">${v} aset</div>
                   </div>
-                  <div class="st-bar"><div class="st-bar-fill" style="width:${pct}%"></div></div>
+                  <div class="sr-pct">${pct}%</div>
                 </div>`;
               }).join('')}
             </div>
