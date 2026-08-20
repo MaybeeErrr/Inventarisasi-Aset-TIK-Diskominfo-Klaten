@@ -1,0 +1,9 @@
+{
+  "name": "inventaris-aset-tik",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplikasi Inventarisasi Aset TIK - Diskominfo Klaten",
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}
