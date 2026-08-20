@@ -185,7 +185,7 @@
   .sr-name{font-weight:700;font-size:12.5px;color:var(--ink);line-height:1.25;}
   .sr-count{font-size:10.5px;color:var(--ink-soft);margin-top:1px;}
   .sr-pct{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;color:currentColor;flex-shrink:0;letter-spacing:-.01em;}
-  .donut-halo{position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle, rgba(139,92,246,.08), transparent 72%);z-index:0;}
+  .donut-halo{position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(circle, rgba(30,27,75,.05), transparent 70%);z-index:0;}
 
   /* Panel gabungan "Ringkasan Aset" — Kategori & Status dalam satu kartu, dipisah garis pembatas */
   .ringkasan-grid{display:grid;grid-template-columns:1fr 1px 1fr;gap:24px;align-items:start;}
@@ -200,13 +200,14 @@
   .two-col{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;}
 
   .donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
-  .donut-svg{width:100%;height:100%;flex-shrink:0;filter:drop-shadow(0 6px 14px rgba(30,27,75,.14));}
+  .donut-svg{width:100%;height:100%;flex-shrink:0;}
   .donut-svg circle{transition:stroke-width .15s ease;}
   .donut-svg .donut-seg{transition:filter .15s ease,transform .15s ease;transform-box:fill-box;transform-origin:center;cursor:pointer;}
-  .donut-svg .donut-seg:hover{filter:brightness(1.08) saturate(1.08);transform:scale(1.035);}
+  .donut-svg .donut-seg:hover{filter:brightness(1.1) saturate(1.1) !important;transform:scale(1.03);}
   .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
-  .donut-center .n{font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;}
-  .donut-center .t{font-size:9.5px;color:var(--ink-soft);letter-spacing:.06em;font-weight:600;}
+  .donut-center::before{content:'';position:absolute;width:64%;height:64%;border-radius:50%;background:#fff;box-shadow:inset 0 1px 3px rgba(30,27,75,.05),0 2px 8px rgba(30,27,75,.06);z-index:-1;}
+  .donut-center .n{font-family:'Plus Jakarta Sans',sans-serif;font-size:27px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1;}
+  .donut-center .t{font-size:9px;color:var(--ink-soft);letter-spacing:.08em;font-weight:700;margin-top:3px;}
   .legend{display:flex;flex-direction:column;gap:8px;flex:1;min-width:190px;}
   .legend-item{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:6px 8px;border-radius:9px;transition:background .15s ease;}
   .legend-item:hover{background:var(--paper);}
@@ -987,18 +988,20 @@ function svgDonut(byStatus, total, w, h){
   // linecap bulat, dan gradasi arah radial supaya tampak lebih premium & 3D-tipis.
   w = w || 240; h = h || 240;
   const cx = w / 2, cy = h / 2;
-  const strokeW = Math.min(w, h) * 0.155;
-  const R = Math.min(w, h) / 2 - strokeW / 2 - 28;
+  const strokeW = Math.min(w, h) * 0.128;
+  const R = Math.min(w, h) / 2 - strokeW / 2 - 6;
   const toRad = d => (d - 90) * Math.PI / 180;
   const pt = (deg, r) => [cx + r * Math.cos(toRad(deg)), cy + r * Math.sin(toRad(deg))];
 
   const entries = Object.entries(byStatus).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
   const n = entries.length;
-  const gapDeg = n > 1 ? 10 : 0;
+  const gapDeg = n > 1 ? 7 : 0;
   const usable = 360 - gapDeg * n;
 
   let angle = 0;
-  const segs = [], labels = [], defs = [];
+  const segs = [], defs = [];
+  const shadowId = 'donutRingShadow';
+  defs.push(`<filter id="${shadowId}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1E1B4B" flood-opacity="0.16"/></filter>`);
 
   entries.forEach(([k, v], i) => {
     const hex = (STATUS_CFG[k] || {}).hex || '#8A93A6';
@@ -1007,7 +1010,6 @@ function svgDonut(byStatus, total, w, h){
     const sweep = frac * usable;
     const a0 = angle, a1 = angle + sweep;
     angle = a1 + gapDeg;
-    const mid = (a0 + a1) / 2;
     const pct = Math.round(frac * 100);
     const large = sweep > 180 ? 1 : 0;
 
@@ -1015,28 +1017,17 @@ function svgDonut(byStatus, total, w, h){
     const gradId = `dseg-${i}`;
 
     defs.push(`<linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${shadeColor(hex, 0.22)}"/>
-      <stop offset="100%" stop-color="${shadeColor(hex, -0.08)}"/>
+      <stop offset="0%" stop-color="${shadeColor(hex, 0.16)}"/>
+      <stop offset="100%" stop-color="${shadeColor(hex, -0.1)}"/>
     </linearGradient>`);
 
-    segs.push(`<path class="donut-seg" d="M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1}" fill="none" stroke="url(#${gradId})" stroke-width="${strokeW}" stroke-linecap="round"><title>${k}: ${pct}% (${v} aset)</title></path>`);
-
-    // Label persentase hanya untuk segmen yang cukup besar agar tidak sesak;
-    // ditaruh sedikit di luar cincin dengan chip putih supaya selalu terbaca
-    // di atas warna apa pun.
-    if(frac >= 0.08){
-      const [lx, ly] = pt(mid, R + strokeW / 2 + 15);
-      const fs = frac >= 0.22 ? 13 : 11;
-      const tw = String(pct).length > 2 ? 30 : 24;
-      labels.push(`<g><rect x="${lx - tw/2}" y="${ly - 10}" width="${tw}" height="18" rx="9" fill="#fff" style="filter:drop-shadow(0 2px 4px rgba(30,27,75,.14));"/><text x="${lx}" y="${ly - 1}" text-anchor="middle" dominant-baseline="middle" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="${fs}" fill="${hex}">${pct}%</text></g>`);
-    }
+    segs.push(`<path class="donut-seg" d="M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1}" fill="none" stroke="url(#${gradId})" stroke-width="${strokeW}" stroke-linecap="round" filter="url(#${shadowId})"><title>${k}: ${pct}% (${v} aset)</title></path>`);
   });
 
   return `<svg class="donut-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
     <defs>${defs.join('')}</defs>
-    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#EEECF7" stroke-width="${strokeW}"/>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#F0EEF7" stroke-width="${strokeW}"/>
     ${segs.join('')}
-    ${labels.join('')}
   </svg>`;
 }
 
