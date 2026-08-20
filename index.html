@@ -26,6 +26,8 @@
     --warn-bg:#FDF1DC;
     --bad:#E1473C;
     --bad-bg:#FCE7E6;
+    --info:#6E56CF;
+    --info-bg:#EFEAFC;
     --off:#8B90A5;
     --off-bg:#EEEDF6;
     --shadow-tint:rgba(79,70,229,.16);
@@ -418,7 +420,7 @@ const STATUS_CFG = {
   'Baik': {color:'good', hex:'#15A36A', icon:'check'},
   'Rusak Ringan': {color:'warn', hex:'#D8870D', icon:'alert'},
   'Rusak Berat': {color:'bad', hex:'#E1473C', icon:'x'},
-  'Dalam Perbaikan': {color:'warn', hex:'#D8870D', icon:'wrench'},
+  'Dalam Perbaikan': {color:'info', hex:'#6E56CF', icon:'wrench'},
   'Tidak Digunakan': {color:'off', hex:'#8B90A5', icon:'ban'},
 };
 const KATEGORI_LIST = ['Komputer/PC','Laptop','Printer/Scanner','Server','Perangkat Jaringan','Proyektor','UPS','Lainnya'];
@@ -996,26 +998,25 @@ function shadeColor(hex, percent){
 }
 
 function svgDonut(byStatus, total, w, h){
-  // Ring chart modern: strip tebal berujung membulat (rounded cap), ada "track"
-  // abu-abu tipis sebagai dasar (pola umum di dashboard modern seperti Apple
-  // Activity / Google Material), celah antar-segmen otomatis rapi karena
-  // linecap bulat, dan gradasi arah radial supaya tampak lebih premium & 3D-tipis.
+  // Ring chart flat & profesional: strip ramping, ujung membulat (rounded cap),
+  // "track" abu-abu tipis sebagai dasar, gradasi sangat halus (nyaris flat, bukan
+  // efek glossy/3D) supaya terasa rapi dan tidak seperti "gelembung".
   w = w || 240; h = h || 240;
   const cx = w / 2, cy = h / 2;
-  const strokeW = Math.min(w, h) * 0.128;
+  const strokeW = Math.min(w, h) * 0.108;
   const R = Math.min(w, h) / 2 - strokeW / 2 - 6;
   const toRad = d => (d - 90) * Math.PI / 180;
   const pt = (deg, r) => [cx + r * Math.cos(toRad(deg)), cy + r * Math.sin(toRad(deg))];
 
   const entries = Object.entries(byStatus).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
   const n = entries.length;
-  const gapDeg = n > 1 ? 7 : 0;
+  const gapDeg = n > 1 ? 6 : 0;
   const usable = 360 - gapDeg * n;
 
   let angle = 0;
   const segs = [], defs = [];
   const shadowId = 'donutRingShadow';
-  defs.push(`<filter id="${shadowId}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1E1B4B" flood-opacity="0.16"/></filter>`);
+  defs.push(`<filter id="${shadowId}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#1E1B4B" flood-opacity="0.10"/></filter>`);
 
   entries.forEach(([k, v], i) => {
     const hex = (STATUS_CFG[k] || {}).hex || '#8A93A6';
@@ -1031,8 +1032,8 @@ function svgDonut(byStatus, total, w, h){
     const gradId = `dseg-${i}`;
 
     defs.push(`<linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${shadeColor(hex, 0.16)}"/>
-      <stop offset="100%" stop-color="${shadeColor(hex, -0.1)}"/>
+      <stop offset="0%" stop-color="${shadeColor(hex, 0.08)}"/>
+      <stop offset="100%" stop-color="${shadeColor(hex, -0.04)}"/>
     </linearGradient>`);
 
     segs.push(`<path class="donut-seg" d="M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1}" fill="none" stroke="url(#${gradId})" stroke-width="${strokeW}" stroke-linecap="round" filter="url(#${shadowId})"><title>${k}: ${pct}% (${v} aset)</title></path>`);
