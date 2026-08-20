@@ -90,7 +90,13 @@
   }
   .field input:focus{outline:none;border-color:var(--blue-500);box-shadow:0 0 0 4px rgba(139,92,246,.13);}
   .field input:focus ~ svg, .input-wrap:focus-within svg{color:var(--blue-500);}
-  .pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:6px;display:flex;border-radius:6px;}
+  /* Sembunyikan ikon reveal/clear bawaan browser (Edge/IE) agar tidak
+     bertumpuk & keluar kotak bersama ikon mata custom kita. */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear{display:none;width:0;height:0;}
+  input::-webkit-credentials-auto-fill-button,
+  input::-webkit-strong-password-auto-fill-button{display:none !important;visibility:hidden;pointer-events:none;position:absolute;right:0;}
+  .pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:6px;display:flex;border-radius:6px;z-index:2;}
   .pw-toggle:hover{color:var(--ink);background:var(--line);}
   .pw-toggle svg{width:16px;height:16px;}
 
