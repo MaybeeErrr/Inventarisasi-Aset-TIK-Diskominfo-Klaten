@@ -150,9 +150,10 @@
   .two-col{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;}
 
   .donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
-  .donut-svg{width:100%;height:100%;flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(30,27,75,.12));}
+  .donut-svg{width:100%;height:100%;flex-shrink:0;filter:drop-shadow(0 6px 14px rgba(30,27,75,.14));}
   .donut-svg circle{transition:stroke-width .15s ease;}
-  .donut-svg .donut-seg{transition:stroke-dasharray 1s cubic-bezier(.22,.9,.3,1);}
+  .donut-svg .donut-seg{transition:filter .15s ease,transform .15s ease;transform-box:fill-box;transform-origin:center;cursor:pointer;}
+  .donut-svg .donut-seg:hover{filter:brightness(1.08) saturate(1.08);transform:scale(1.035);}
   .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
   .donut-center .n{font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;}
   .donut-center .t{font-size:9.5px;color:var(--ink-soft);letter-spacing:.06em;font-weight:600;}
@@ -879,64 +880,58 @@ function shadeColor(hex, percent){
 }
 
 function svgDonut(byStatus, total, w, h){
-  // Diagram pie 3D "isometrik" dengan irisan terpisah (exploded) + label persentase langsung di diagram.
-  w = w || 300; h = h || 230;
-  const cx = w * 0.40, cy = h * 0.44;
-  const rx = w * 0.225, ry = rx * 0.55;
-  const depth = h * 0.15;    // ketebalan sisi 3D
-  const explode = w * 0.05;  // jarak pemisahan tiap irisan dari pusat
+  // Diagram donat 2D yang bersih: tiap irisan punya celah kecil + gradasi warna,
+  // label persentase selalu ditaruh DI DALAM irisannya sendiri (tidak ada garis
+  // penunjuk yang bisa bertabrakan/tumpang tindih seperti versi 3D sebelumnya).
+  // Irisan yang terlalu tipis untuk memuat teks cukup diberi warna — rincian
+  // persentase & jumlahnya sudah tersedia jelas di legenda di sampingnya.
+  w = w || 240; h = h || 240;
+  const cx = w / 2, cy = h / 2;
+  const outerR = Math.min(w, h) / 2 - 10;
+  const innerR = outerR * 0.6;
+  const pad = 0.05; // celah antar-irisan (radian)
 
-  // Urutkan dari terbesar ke terkecil biar alur diagram sama dengan urutan di legenda.
-  const entries = Object.entries(byStatus).sort((a, b) => b[1] - a[1]);
+  const entries = Object.entries(byStatus).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const n = entries.length;
   let acc = -Math.PI / 2; // mulai dari atas
-  const sides = [], tops = [], labels = [];
+  const segs = [], labels = [], defs = [];
 
-  entries.forEach(([k, v]) => {
+  entries.forEach(([k, v], i) => {
     const hex = (STATUS_CFG[k] || {}).hex || '#8A93A6';
     const frac = total ? v / total : 0;
     if(frac <= 0) return;
     const a0 = acc, a1 = acc + frac * Math.PI * 2;
     acc = a1;
-    const mid = (a0 + a1) / 2;
-
-    const exCx = cx + explode * Math.cos(mid);
-    const exCy = cy + explode * Math.sin(mid) * (ry / rx);
-
-    const pt = (ang, rxo, ryo) => [exCx + (rxo!=null?rxo:rx) * Math.cos(ang), exCy + (ryo!=null?ryo:ry) * Math.sin(ang)];
-    const [x0, y0] = pt(a0);
-    const [x1, y1] = pt(a1);
-    const largeArc = (a1 - a0) > Math.PI ? 1 : 0;
+    const g = n > 1 ? pad / 2 : 0;
+    const sa = a0 + g, ea = Math.max(a1 - g, sa + 0.001);
+    const mid = (sa + ea) / 2;
     const pct = Math.round(frac * 100);
+    const large = (ea - sa) > Math.PI ? 1 : 0;
 
-    const sideColor = shadeColor(hex, -0.28);
-    const topColorLight = shadeColor(hex, 0.06);
+    const pt = (ang, r) => [cx + r * Math.cos(ang), cy + r * Math.sin(ang)];
+    const [ox0, oy0] = pt(sa, outerR), [ox1, oy1] = pt(ea, outerR);
+    const [ix1, iy1] = pt(ea, innerR), [ix0, iy0] = pt(sa, innerR);
+    const gradId = `dseg-${i}`;
 
-    sides.push(`<path d="M ${x0} ${y0} A ${rx} ${ry} 0 ${largeArc} 1 ${x1} ${y1} L ${x1} ${y1 + depth} A ${rx} ${ry} 0 ${largeArc} 1 ${x0} ${y0 + depth} Z" fill="${sideColor}" stroke="rgba(0,0,0,.12)" stroke-width="1"/>`);
-    tops.push(`<path class="donut-seg" d="M ${exCx} ${exCy} L ${x0} ${y0} A ${rx} ${ry} 0 ${largeArc} 1 ${x1} ${y1} Z" fill="${topColorLight}" stroke="rgba(255,255,255,.65)" stroke-width="1.5" stroke-linejoin="round"><title>${k}: ${pct}%</title></path>`);
+    defs.push(`<linearGradient id="${gradId}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${shadeColor(hex, 0.2)}"/>
+      <stop offset="100%" stop-color="${hex}"/>
+    </linearGradient>`);
 
-    if(frac >= 0.28){
-      // Irisan besar: taruh persentase langsung di tengah irisan, teks putih tebal.
-      const [lx, ly] = pt(mid, rx * 0.56, ry * 0.56);
-      labels.push(`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="15" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.22); stroke-width:2.5px;">${pct}%</text>`);
-    } else {
-      // Irisan kecil: garis penunjuk keluar ke label agar tidak berdesakan.
-      const edge = pt(mid);
-      const dirX = Math.cos(mid), dirY = Math.sin(mid) * (ry / rx);
-      const len = Math.hypot(dirX, dirY) || 1;
-      const ux = dirX / len, uy = dirY / len;
-      const midPt = [edge[0] + ux * 16, edge[1] + uy * 16];
-      const endPt = [edge[0] + ux * 30, edge[1] + uy * 30];
-      const anchor = ux > 0.15 ? 'start' : (ux < -0.15 ? 'end' : 'middle');
-      const tx = endPt[0] + (anchor === 'start' ? 4 : anchor === 'end' ? -4 : 0);
-      labels.push(`<polyline points="${edge[0]},${edge[1]} ${midPt[0]},${midPt[1]} ${endPt[0]},${endPt[1]}" fill="none" stroke="${hex}" stroke-width="1.5"/>`);
-      labels.push(`<circle cx="${edge[0]}" cy="${edge[1]}" r="2.5" fill="${hex}"/>`);
-      labels.push(`<text x="${tx}" y="${endPt[1]}" text-anchor="${anchor}" dominant-baseline="middle" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="13" fill="${hex}" style="paint-order:stroke; stroke:#fff; stroke-width:3px;">${pct}%</text>`);
+    segs.push(`<path class="donut-seg" d="M ${ox0} ${oy0} A ${outerR} ${outerR} 0 ${large} 1 ${ox1} ${oy1} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 ${large} 0 ${ix0} ${iy0} Z" fill="url(#${gradId})" stroke="#fff" stroke-width="2" stroke-linejoin="round"><title>${k}: ${pct}% (${v} aset)</title></path>`);
+
+    // Hanya tampilkan label di atas irisan jika muat (>=6%); irisan sangat tipis
+    // cukup diwakili warnanya saja + tooltip on-hover, biar tidak sesak/tumpang tindih.
+    if(frac >= 0.06){
+      const [lx, ly] = pt(mid, (outerR + innerR) / 2);
+      const fs = frac >= 0.18 ? 14 : 11.5;
+      labels.push(`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="${fs}" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.28); stroke-width:2.5px;">${pct}%</text>`);
     }
   });
 
   return `<svg class="donut-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-    ${sides.join('')}
-    ${tops.join('')}
+    <defs>${defs.join('')}</defs>
+    ${segs.join('')}
     ${labels.join('')}
   </svg>`;
 }
@@ -1011,8 +1006,12 @@ function renderDashboard(){
         <h2><span style="display:flex;align-items:center;gap:7px;"><span style="width:16px;height:16px;color:var(--good);display:inline-flex;">${icon('check')}</span>Aset per Status</span></h2>
         ${s.total ? `
         <div class="donut-wrap">
-          <div style="position:relative;width:300px;height:230px;flex-shrink:0;">
-            ${svgDonut(s.byStatus, s.total)}
+          <div style="position:relative;width:220px;height:220px;flex-shrink:0;">
+            ${svgDonut(s.byStatus, s.total, 220, 220)}
+            <div class="donut-center">
+              <div class="n">${s.total}</div>
+              <div class="t">TOTAL ASET</div>
+            </div>
           </div>
           <div class="legend">
             ${Object.entries(s.byStatus).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
