@@ -1001,51 +1001,62 @@ function shadeColor(hex, percent){
 }
 
 function svgDonut(byStatus, total, w, h){
-  // Ring chart flat & profesional: strip ramping, ujung membulat (rounded cap),
-  // "track" abu-abu tipis sebagai dasar, gradasi sangat halus (nyaris flat, bukan
-  // efek glossy/3D) supaya terasa rapi dan tidak seperti "gelembung".
+  // Ring chart standar & rapi: segmen-segmen SALING BERSAMBUNG (tanpa celah
+  // mengambang seperti sebelumnya, yang membuat cincin terlihat putus-putus),
+  // warna flat solid per status, dipisahkan garis putih tipis antar-segmen
+  // (pola umum di donut chart profesional seperti Chart.js/Highcharts), dan
+  // satu bayangan halus untuk seluruh cincin — bukan per-segmen — supaya hasil
+  // akhirnya bersih dan konsisten, bukan seperti gelembung 3D terpisah-pisah.
   w = w || 240; h = h || 240;
   const cx = w / 2, cy = h / 2;
-  const strokeW = Math.min(w, h) * 0.108;
-  const R = Math.min(w, h) / 2 - strokeW / 2 - 6;
+  const strokeW = Math.min(w, h) * 0.155;
+  const R = Math.min(w, h) / 2 - strokeW / 2 - 4;
   const toRad = d => (d - 90) * Math.PI / 180;
   const pt = (deg, r) => [cx + r * Math.cos(toRad(deg)), cy + r * Math.sin(toRad(deg))];
 
   const entries = Object.entries(byStatus).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
-  const n = entries.length;
-  const gapDeg = n > 1 ? 6 : 0;
-  const usable = 360 - gapDeg * n;
-
-  let angle = 0;
-  const segs = [], defs = [];
   const shadowId = 'donutRingShadow';
-  defs.push(`<filter id="${shadowId}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#1E1B4B" flood-opacity="0.10"/></filter>`);
+  const defs = [`<filter id="${shadowId}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1E1B4B" flood-opacity="0.14"/></filter>`];
 
-  entries.forEach(([k, v], i) => {
+  if(!entries.length || !total){
+    return `<svg class="donut-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#F0EEF7" stroke-width="${strokeW}"/>
+    </svg>`;
+  }
+
+  // Sudut mulai tiap segmen dihitung dulu (tanpa celah) supaya kita tahu di mana
+  // memotong garis pemisah putih tipis setelahnya.
+  let angle = 0;
+  const boundaries = [];
+  const segs = entries.map(([k, v], i) => {
     const hex = (STATUS_CFG[k] || {}).hex || '#8A93A6';
-    const frac = total ? v / total : 0;
-    if(frac <= 0) return;
-    const sweep = frac * usable;
+    const frac = v / total;
+    const sweep = frac * 360;
     const a0 = angle, a1 = angle + sweep;
-    angle = a1 + gapDeg;
+    angle = a1;
+    boundaries.push(a0);
     const pct = Math.round(frac * 100);
     const large = sweep > 180 ? 1 : 0;
-
     const [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R);
-    const gradId = `dseg-${i}`;
-
-    defs.push(`<linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${shadeColor(hex, 0.08)}"/>
-      <stop offset="100%" stop-color="${shadeColor(hex, -0.04)}"/>
-    </linearGradient>`);
-
-    segs.push(`<path class="donut-seg" d="M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1}" fill="none" stroke="url(#${gradId})" stroke-width="${strokeW}" stroke-linecap="round" filter="url(#${shadowId})"><title>${k}: ${pct}% (${v} aset)</title></path>`);
+    return `<path class="donut-seg" d="M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1}" fill="none" stroke="${hex}" stroke-width="${strokeW}"><title>${k}: ${pct}% (${v} aset)</title></path>`;
   });
+
+  // Garis pemisah putih tipis di setiap batas segmen (dilewati jika hanya 1
+  // segmen, supaya cincin tunggal tetap utuh tanpa potongan).
+  const dividers = entries.length > 1 ? boundaries.map(a => {
+    const rIn = R - strokeW / 2, rOut = R + strokeW / 2;
+    const [xi, yi] = pt(a, rIn), [xo, yo] = pt(a, rOut);
+    return `<line x1="${xi}" y1="${yi}" x2="${xo}" y2="${yo}" stroke="#fff" stroke-width="2.5"/>`;
+  }).join('') : '';
 
   return `<svg class="donut-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
     <defs>${defs.join('')}</defs>
     <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#F0EEF7" stroke-width="${strokeW}"/>
-    ${segs.join('')}
+    <g filter="url(#${shadowId})">${segs.join('')}</g>
+    ${dividers}
+    <circle cx="${cx}" cy="${cy}" r="${R - strokeW/2 - 1}" fill="none" stroke="#fff" stroke-width="2"/>
+    <circle cx="${cx}" cy="${cy}" r="${R + strokeW/2 + 1}" fill="none" stroke="#fff" stroke-width="2"/>
+
   </svg>`;
 }
 
