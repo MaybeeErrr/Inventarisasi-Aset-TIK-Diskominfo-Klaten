@@ -26,8 +26,9 @@
   }
   *{box-sizing:border-box;}
   svg{width:16px;height:16px;}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;}
-  .app{display:flex;min-height:640px;}
+  html{height:100%;}
+  body{margin:0;min-height:100vh;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;}
+  .app{display:flex;min-height:100vh;}
   #print-report{display:none;}
 
   ::-webkit-scrollbar{width:9px;height:9px;}
@@ -149,19 +150,31 @@
   .two-col{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;}
 
   .donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
-  .donut-svg{flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(30,27,75,.12));}
+  .donut-svg{width:100%;height:100%;flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(30,27,75,.12));}
   .donut-svg circle{transition:stroke-width .15s ease;}
   .donut-svg .donut-seg{transition:stroke-dasharray 1s cubic-bezier(.22,.9,.3,1);}
   .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
   .donut-center .n{font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;}
   .donut-center .t{font-size:9.5px;color:var(--ink-soft);letter-spacing:.06em;font-weight:600;}
-  .legend{display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px;}
+  .legend{display:flex;flex-direction:column;gap:8px;flex:1;min-width:190px;}
   .legend-item{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:6px 8px;border-radius:9px;transition:background .15s ease;}
   .legend-item:hover{background:var(--paper);}
   .legend-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 3px color-mix(in srgb, currentColor 15%, transparent);}
   .legend-item .name{flex:1;color:var(--ink);font-weight:500;}
   .legend-item .n{font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;}
   .legend-item .pct{font-size:10.5px;color:var(--ink-soft);font-weight:600;background:var(--paper);border-radius:20px;padding:2px 7px;margin-left:2px;}
+
+  /* Status diagram — daftar status dengan bar persentase, dipakai di panel "Aset per Status" */
+  .status-row{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;margin-bottom:6px;position:relative;overflow:hidden;background:var(--paper);transition:transform .15s ease;}
+  .status-row:hover{transform:translateX(2px);}
+  .status-row:last-child{margin-bottom:0;}
+  .status-row .sr-fill{position:absolute;left:0;top:0;bottom:0;border-radius:12px;opacity:.16;z-index:0;transition:width .7s cubic-bezier(.22,.9,.3,1);}
+  .status-row .sr-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;position:relative;z-index:1;box-shadow:0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);}
+  .status-row .sr-body{flex:1;min-width:0;position:relative;z-index:1;}
+  .status-row .sr-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+  .status-row .sr-name{font-weight:600;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .status-row .sr-pct{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;letter-spacing:-.01em;flex-shrink:0;}
+  .status-row .sr-count{font-size:10.5px;color:var(--ink-soft);margin-top:1px;}
 
   .activity-item{display:flex;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:12.5px;border-radius:9px;}
   .activity-item:last-child{border-bottom:none;}
@@ -275,7 +288,7 @@
   }
 
   /* Loading state */
-  .loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:640px;width:100%;color:var(--ink-soft);}
+  .loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:100vh;width:100%;color:var(--ink-soft);}
   .spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--blue-100);border-top-color:var(--navy-700);animation:spin .8s linear infinite;}
   .loading-screen .lt{font-size:13px;font-weight:500;}
 </style>
@@ -859,20 +872,27 @@ function renderSidebar(){
 }
 
 function svgDonut(byStatus, total, size, strokeWidth){
-  size = size || 132; strokeWidth = strokeWidth || 17;
+  size = size || 172; strokeWidth = strokeWidth || 21;
   const r = (size - strokeWidth) / 2;
   const c = 2 * Math.PI * r;
   const cx = size / 2, cy = size / 2;
-  const gap = total > 1 ? 2.5 : 0; // celah kecil antar segmen biar tidak menyatu
+  const gap = total > 1 ? 3 : 0; // celah kecil antar segmen biar tidak menyatu
   let offsetAcc = 0;
-  const segs = Object.entries(byStatus).map(([k, v]) => {
+  const defs = Object.entries(byStatus).map(([k], i) => {
     const hex = (STATUS_CFG[k] || {}).hex || '#8A93A6';
+    return `<linearGradient id="dg-${i}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${hex}" stop-opacity=".82"/>
+      <stop offset="100%" stop-color="${hex}"/>
+    </linearGradient>`;
+  }).join('');
+  const segs = Object.entries(byStatus).map(([k, v], i) => {
     const dash = Math.max((v / total) * c - gap, 0);
-    const circle = `<circle class="donut-seg" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${hex}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${dash} ${c - dash}" stroke-dashoffset="${-offsetAcc}"/>`;
+    const circle = `<circle class="donut-seg" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#dg-${i})" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${dash} ${c - dash}" stroke-dashoffset="${-offsetAcc}"><title>${k}: ${Math.round(v/total*100)}%</title></circle>`;
     offsetAcc += (v / total) * c;
     return circle;
   }).join('');
   return `<svg class="donut-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg)">
+    <defs>${defs}</defs>
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--paper)" stroke-width="${strokeWidth}"/>
     ${segs}
   </svg>`;
@@ -948,13 +968,25 @@ function renderDashboard(){
         <h2><span style="display:flex;align-items:center;gap:7px;"><span style="width:16px;height:16px;color:var(--good);display:inline-flex;">${icon('check')}</span>Aset per Status</span></h2>
         ${s.total ? `
         <div class="donut-wrap">
-          <div style="position:relative;width:132px;height:132px;flex-shrink:0;">
+          <div style="position:relative;width:172px;height:172px;flex-shrink:0;">
             ${svgDonut(s.byStatus, s.total)}
             <div class="donut-center"><div class="n">${s.total}</div><div class="t">ASET</div></div>
           </div>
           <div class="legend">
-            ${Object.entries(s.byStatus).map(([k,v])=>`
-              <div class="legend-item"><span class="dot" style="background:var(--${(STATUS_CFG[k]||{}).color||'off'});color:var(--${(STATUS_CFG[k]||{}).color||'off'})"></span><span class="name">${k}</span><span class="n">${v}</span><span class="pct">${Math.round(v/s.total*100)}%</span></div>`).join('')}
+            ${Object.entries(s.byStatus).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+              const hex = (STATUS_CFG[k]||{}).hex || '#8A93A6';
+              const cvar = 'var(--'+((STATUS_CFG[k]||{}).color||'off')+')';
+              const pct = Math.round(v/s.total*100);
+              return `
+              <div class="status-row" style="color:${hex}">
+                <div class="sr-fill" style="width:${pct}%;background:${hex}"></div>
+                <span class="sr-dot" style="background:${cvar}"></span>
+                <div class="sr-body">
+                  <div class="sr-top"><span class="sr-name">${k}</span><span class="sr-pct" style="color:${cvar}">${pct}%</span></div>
+                  <div class="sr-count">${v} aset</div>
+                </div>
+              </div>`;
+            }).join('')}
           </div>
         </div>` : '<p style="color:var(--ink-soft);font-size:13px;">Belum ada data.</p>'}
       </div>
