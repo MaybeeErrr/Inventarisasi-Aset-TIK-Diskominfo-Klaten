@@ -1,3 +1,9 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Inventarisasi Aset TIK — Diskominfo Klaten</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -270,20 +276,39 @@
 
   @media (max-width: 900px){
     .app{flex-direction:column;}
-    .sidebar{width:100%;flex-direction:row;align-items:center;gap:16px;padding:12px 16px;}
-    .brand{margin-bottom:0;}
-    .nav{flex-direction:row;}
-    .sidebar-foot{display:none;}
+    .sidebar{width:100%;flex-direction:row;align-items:center;gap:10px;padding:10px 14px;flex-wrap:nowrap;}
+    .brand{margin-bottom:0;flex-shrink:0;}
+    .brand-text .t2{display:none;}
+    .nav{flex:1;flex-direction:row;flex-wrap:nowrap;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:4px;}
+    .nav::-webkit-scrollbar{display:none;}
+    .nav-item{flex-shrink:0;white-space:nowrap;padding:8px 10px;font-size:12.5px;}
+    .sidebar-foot{display:flex;align-items:center;flex-shrink:0;margin-top:0;padding-top:0;border-top:none;}
+    .sidebar-foot > *:not(.logout-btn){display:none;}
+    .logout-btn{width:auto;margin-top:0;padding:8px 10px;}
     .stat-grid{grid-template-columns:repeat(2,1fr);}
     .two-col{grid-template-columns:1fr;}
     .value-banner{flex-direction:column;align-items:flex-start;}
     .value-banner .vb-sub{text-align:left;}
+    .detail-grid{grid-template-columns:1fr;}
+    .donut-wrap{justify-content:center;width:100%;}
+    .donut-wrap>div:first-child{width:190px !important;height:190px !important;}
   }
   @media (max-width: 560px){
     .stat-grid{grid-template-columns:1fr;}
     .form-grid{grid-template-columns:1fr;}
     .content{padding:16px;}
-    .topbar{padding:14px 16px;}
+    .topbar{padding:14px 16px;flex-wrap:wrap;}
+    .topbar h1{font-size:17px;}
+    .topbar-actions{width:100%;}
+    .topbar-actions .btn{flex:1;justify-content:center;}
+    .bar-row{flex-wrap:wrap;}
+    .bar-row .bar-lbl{width:100%;order:1;}
+    .bar-row .bar-track{order:2;flex:1;}
+    .bar-row .bar-n{order:3;}
+    .donut-wrap>div:first-child{width:170px !important;height:170px !important;}
+    .modal{padding:20px 16px;border-radius:16px;}
+    .value-banner{padding:20px;}
+    .value-banner .vb-val{font-size:25px;}
   }
 
   @media print{
@@ -297,6 +322,8 @@
   .spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--blue-100);border-top-color:var(--navy-700);animation:spin .8s linear infinite;}
   .loading-screen .lt{font-size:13px;font-weight:500;}
 </style>
+</head>
+<body>
 
 <div id="root" class="app"></div>
 <div id="print-report"></div>
@@ -1485,3 +1512,5 @@ function render(){ renderApp(); }
 
 loadData();
 </script>
+</body>
+</html>
