@@ -6,119 +6,202 @@
 <title>Masuk — Inventarisasi Aset TIK Diskominfo Klaten</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy-900:#0F2340;
-    --navy-800:#152F52;
-    --navy-700:#1E4976;
-    --blue-500:#3B7DBF;
-    --blue-100:#E4EEF8;
-    --ink:#1A2433;
-    --ink-soft:#5B6678;
-    --line:#E1E6ED;
-    --bad:#C4453D;
-    --bad-bg:#FBE9E8;
+    --navy-900:#1E1B4B;
+    --navy-800:#2D2470;
+    --navy-700:#4F46E5;
+    --blue-500:#8B5CF6;
+    --blue-100:#F0EBFF;
+    --cyan:#06B6D4;
+    --ink:#161A2E;
+    --ink-soft:#6B7086;
+    --line:#E9E7F5;
+    --bad:#E1473C;
+    --bad-bg:#FCE7E6;
   }
   *{box-sizing:border-box;}
+  html,body{height:100%;}
   body{
-    margin:0;min-height:100vh;font-family:'Inter',sans-serif;color:#fff;
-    display:flex;align-items:center;justify-content:center;padding:24px;
-    background:linear-gradient(120deg,var(--navy-900),var(--navy-700) 45%,var(--blue-500) 100%);
-    background-size:220% 220%;
-    animation:shimmerPan 10s ease-in-out infinite alternate;
-    position:relative;overflow:hidden;
+    margin:0;font-family:'Inter',sans-serif;color:var(--ink);
+    display:flex;min-height:100vh;
   }
-  body::before{
-    content:'';position:absolute;inset:0;pointer-events:none;
-    background:
-      radial-gradient(circle at 15% 20%, rgba(255,255,255,.08), transparent 40%),
-      radial-gradient(circle at 85% 80%, rgba(255,255,255,.06), transparent 45%),
-      repeating-linear-gradient(115deg, rgba(255,255,255,.03) 0 2px, transparent 2px 26px);
-  }
-  @keyframes shimmerPan{0%{background-position:0% 50%;}100%{background-position:200% 50%;}}
+
+  @keyframes blobDrift{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-18px,14px) scale(1.1);}}
+  @keyframes blobDrift2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(16px,-12px) scale(1.06);}}
   @keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
   @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
   @keyframes shake{10%,90%{transform:translateX(-1px);}20%,80%{transform:translateX(2px);}30%,50%,70%{transform:translateX(-4px);}40%,60%{transform:translateX(4px);}}
   @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes drawCheck{to{stroke-dashoffset:0;}}
 
-  .card{
-    position:relative;z-index:1;width:100%;max-width:380px;background:#fff;color:var(--ink);
-    border-radius:16px;padding:34px 30px 30px;box-shadow:0 30px 70px rgba(0,0,0,.35);
-    animation:fadeUp .5s cubic-bezier(.22,.9,.3,1) both;
+  /* Left brand panel */
+  .brand-panel{
+    flex:1.05;position:relative;overflow:hidden;display:flex;flex-direction:column;
+    justify-content:space-between;padding:48px 52px;color:#fff;
+    background:linear-gradient(165deg,var(--navy-900) 0%,#2A2570 55%,var(--navy-800) 100%);
   }
-  .brand{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:22px;text-align:center;}
-  .brand-mark{
-    width:54px;height:54px;border-radius:14px;flex-shrink:0;
-    background:linear-gradient(135deg,var(--blue-500),var(--navy-700));
-    display:flex;align-items:center;justify-content:center;color:#fff;
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;
-    box-shadow:0 8px 20px rgba(59,125,191,.35);
-    animation:floatY 3.6s ease-in-out infinite;
-  }
-  .brand h1{font-family:'Space Grotesk',sans-serif;font-size:16px;margin:0;font-weight:700;color:var(--navy-900);}
-  .brand p{font-size:12.5px;color:var(--ink-soft);margin:2px 0 0;}
+  .brand-panel::before{content:'';position:absolute;width:340px;height:340px;border-radius:50%;top:-120px;right:-100px;background:radial-gradient(circle,rgba(139,92,246,.4),transparent 70%);animation:blobDrift 11s ease-in-out infinite;}
+  .brand-panel::after{content:'';position:absolute;width:280px;height:280px;border-radius:50%;bottom:-100px;left:-90px;background:radial-gradient(circle,rgba(6,182,212,.28),transparent 70%);animation:blobDrift2 13s ease-in-out infinite;}
+  .grid-overlay{position:absolute;inset:0;opacity:.5;background:
+    repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 2px, transparent 2px 28px);
+    pointer-events:none;}
 
-  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
-  .field label{font-size:12px;font-weight:600;color:var(--ink-soft);}
+  .bp-top{position:relative;z-index:1;display:flex;align-items:center;gap:12px;animation:fadeUp .6s cubic-bezier(.22,.9,.3,1) both;}
+  .bp-mark{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--blue-500),var(--navy-700));display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(79,70,229,.5);animation:floatY 3.6s ease-in-out infinite;flex-shrink:0;}
+  .bp-top .name{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;}
+  .bp-top .sub{font-size:11.5px;color:#B4AEDD;margin-top:1px;}
+
+  .bp-mid{position:relative;z-index:1;max-width:420px;margin-top:auto;margin-bottom:auto;padding:60px 0;}
+  .bp-mid h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;line-height:1.25;margin:0 0 14px;letter-spacing:-.01em;animation:fadeUp .6s .05s cubic-bezier(.22,.9,.3,1) both;}
+  .bp-mid p{font-size:14px;color:#C9C4E8;line-height:1.6;margin:0 0 30px;animation:fadeUp .6s .1s cubic-bezier(.22,.9,.3,1) both;}
+
+  .feat-list{display:flex;flex-direction:column;gap:14px;}
+  .feat-item{display:flex;align-items:center;gap:12px;font-size:13px;color:#E6E3F7;animation:fadeUp .6s cubic-bezier(.22,.9,.3,1) both;}
+  .feat-item:nth-child(1){animation-delay:.15s;}
+  .feat-item:nth-child(2){animation-delay:.22s;}
+  .feat-item:nth-child(3){animation-delay:.29s;}
+  .feat-ico{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);}
+  .feat-ico svg{width:15px;height:15px;color:#fff;}
+
+  .bp-bottom{position:relative;z-index:1;font-size:11.5px;color:#948DC4;animation:fadeUp .6s .3s cubic-bezier(.22,.9,.3,1) both;}
+
+  /* Right form panel */
+  .form-panel{flex:1;display:flex;align-items:center;justify-content:center;padding:32px;background:#FBFAFF;position:relative;}
+  .form-wrap{width:100%;max-width:360px;animation:fadeUp .55s cubic-bezier(.22,.9,.3,1) both;}
+  .mobile-brand{display:none;align-items:center;gap:10px;justify-content:center;margin-bottom:26px;}
+  .mobile-brand .bp-mark{width:38px;height:38px;font-size:14px;box-shadow:0 6px 16px rgba(79,70,229,.4);}
+  .mobile-brand .name{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14px;color:var(--ink);}
+  .mobile-brand .sub{font-size:11px;color:var(--ink-soft);}
+
+  .fw-head{margin-bottom:26px;}
+  .fw-head h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:23px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em;}
+  .fw-head p{font-size:13px;color:var(--ink-soft);margin:0;}
+
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+  .field label{font-size:12.5px;font-weight:600;color:var(--ink);}
+  .input-wrap{position:relative;}
+  .input-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ink-soft);transition:color .15s ease;}
   .field input{
-    padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;
-    font-size:14px;color:var(--ink);transition:border-color .15s ease,box-shadow .15s ease;
+    width:100%;padding:12px 14px 12px 40px;border:1.5px solid var(--line);border-radius:12px;font-family:inherit;
+    font-size:14px;color:var(--ink);transition:border-color .15s ease,box-shadow .15s ease;background:#fff;
   }
-  .field input:focus{outline:none;border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(59,125,191,.15);}
+  .field input:focus{outline:none;border-color:var(--blue-500);box-shadow:0 0 0 4px rgba(139,92,246,.13);}
+  .field input:focus ~ svg, .input-wrap:focus-within svg{color:var(--blue-500);}
+  .pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:6px;display:flex;border-radius:6px;}
+  .pw-toggle:hover{color:var(--ink);background:var(--line);}
+  .pw-toggle svg{width:16px;height:16px;}
 
   .error-box{
     display:none;align-items:center;gap:8px;background:var(--bad-bg);color:var(--bad);
-    font-size:12.5px;font-weight:500;padding:9px 11px;border-radius:8px;margin-bottom:14px;
+    font-size:12.5px;font-weight:500;padding:10px 12px;border-radius:11px;margin-bottom:16px;
   }
   .error-box.show{display:flex;animation:shake .4s ease;}
   .error-box svg{width:15px;height:15px;flex-shrink:0;}
 
   .btn{
-    width:100%;padding:11px;border:none;border-radius:8px;background:var(--navy-700);color:#fff;
+    width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(120deg,var(--navy-700),var(--blue-500));color:#fff;
     font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;
     display:flex;align-items:center;justify-content:center;gap:8px;
-    transition:background .16s ease,transform .12s ease,box-shadow .16s ease;
+    transition:box-shadow .16s ease,transform .12s ease;box-shadow:0 6px 18px rgba(79,70,229,.32);
   }
-  .btn:hover{background:var(--navy-800);box-shadow:0 8px 20px rgba(15,35,64,.25);transform:translateY(-1px);}
+  .btn:hover{box-shadow:0 10px 24px rgba(79,70,229,.42);transform:translateY(-1px);}
   .btn:active{transform:translateY(0) scale(.98);}
   .btn:disabled{opacity:.7;cursor:not-allowed;transform:none;}
   .spinner{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .7s linear infinite;display:none;}
   .btn.loading .spinner{display:inline-block;}
   .btn.loading .btn-label{opacity:.85;}
 
-  .foot{margin-top:18px;text-align:center;font-size:11px;color:var(--ink-soft);}
+  .foot{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-soft);}
+
+  @media (max-width: 860px){
+    .brand-panel{display:none;}
+    .mobile-brand{display:flex;}
+    .form-panel{padding:24px;}
+  }
 </style>
 </head>
 <body>
-  <div class="card">
-    <div class="brand">
-      <div class="brand-mark">TIK</div>
-      <h1>Inventarisasi Aset TIK</h1>
-      <p>Diskominfo Kabupaten Klaten</p>
+  <div class="brand-panel">
+    <div class="grid-overlay"></div>
+    <div class="bp-top">
+      <div class="bp-mark">TIK</div>
+      <div>
+        <div class="name">Diskominfo Klaten</div>
+        <div class="sub">Inventarisasi Aset TIK</div>
+      </div>
     </div>
 
-    <div class="error-box" id="error-box">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
-      <span id="error-text">Username atau password salah.</span>
+    <div class="bp-mid">
+      <h1>Kelola aset TIK dengan rapi &amp; terpusat.</h1>
+      <p>Satu sistem untuk mencatat, memantau, dan melaporkan seluruh aset Teknologi Informasi dan Komunikasi di lingkungan Diskominfo Kabupaten Klaten.</p>
+      <div class="feat-list">
+        <div class="feat-item">
+          <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></div>
+          Pencatatan aset per kategori &amp; status
+        </div>
+        <div class="feat-item">
+          <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+          Riwayat aktivitas real-time &amp; otomatis
+        </div>
+        <div class="feat-item">
+          <div class="feat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div>
+          Ekspor &amp; cetak laporan dalam sekali klik
+        </div>
+      </div>
     </div>
 
-    <form id="login-form">
-      <div class="field">
-        <label for="username">Username</label>
-        <input id="username" name="username" type="text" autocomplete="username" required autofocus>
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
-      </div>
-      <button class="btn" type="submit" id="submit-btn">
-        <span class="spinner"></span>
-        <span class="btn-label">Masuk</span>
-      </button>
-    </form>
+    <div class="bp-bottom">© 2026 Dinas Komunikasi dan Informatika Kabupaten Klaten.</div>
+  </div>
 
-    <div class="foot">Akses terbatas untuk pegawai Diskominfo Klaten.</div>
+  <div class="form-panel">
+    <div class="form-wrap">
+      <div class="mobile-brand">
+        <div class="bp-mark">TIK</div>
+        <div>
+          <div class="name">Diskominfo Klaten</div>
+          <div class="sub">Inventarisasi Aset TIK</div>
+        </div>
+      </div>
+
+      <div class="fw-head">
+        <h2>Selamat datang kembali</h2>
+        <p>Masuk untuk mengakses sistem inventarisasi aset TIK.</p>
+      </div>
+
+      <div class="error-box" id="error-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+        <span id="error-text">Username atau password salah.</span>
+      </div>
+
+      <form id="login-form">
+        <div class="field">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+            <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+          </div>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input id="password" name="password" type="password" autocomplete="current-password" required style="padding-right:40px;">
+            <button type="button" class="pw-toggle" id="pw-toggle" tabindex="-1" aria-label="Tampilkan password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn" type="submit" id="submit-btn">
+          <span class="spinner"></span>
+          <span class="btn-label">Masuk</span>
+        </button>
+      </form>
+
+      <div class="foot">Akses terbatas untuk pegawai Diskominfo Klaten.</div>
+    </div>
   </div>
 
 <script>
@@ -126,11 +209,18 @@
   const btn = document.getElementById('submit-btn');
   const errorBox = document.getElementById('error-box');
   const errorText = document.getElementById('error-text');
+  const pwToggle = document.getElementById('pw-toggle');
+  const pwInput = document.getElementById('password');
+
+  pwToggle.addEventListener('click', () => {
+    const showing = pwInput.type === 'text';
+    pwInput.type = showing ? 'password' : 'text';
+    pwToggle.setAttribute('aria-label', showing ? 'Tampilkan password' : 'Sembunyikan password');
+  });
 
   function showError(msg){
     errorText.textContent = msg;
     errorBox.classList.remove('show');
-    // restart animasi shake walau pesan errornya sama persis
     void errorBox.offsetWidth;
     errorBox.classList.add('show');
   }
