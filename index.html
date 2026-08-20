@@ -871,30 +871,52 @@ function renderSidebar(){
   </div>`;
 }
 
-function svgDonut(byStatus, total, size, strokeWidth){
-  size = size || 172; strokeWidth = strokeWidth || 21;
-  const r = (size - strokeWidth) / 2;
-  const c = 2 * Math.PI * r;
-  const cx = size / 2, cy = size / 2;
-  const gap = total > 1 ? 3 : 0; // celah kecil antar segmen biar tidak menyatu
-  let offsetAcc = 0;
-  const defs = Object.entries(byStatus).map(([k], i) => {
+function shadeColor(hex, percent){
+  // percent negatif = gelapkan (untuk sisi/bayangan 3D), positif = terangkan
+  const f = parseInt(hex.slice(1), 16), t = percent < 0 ? 0 : 255, p = Math.abs(percent);
+  const R = f >> 16, G = (f >> 8) & 0x00FF, B = f & 0x0000FF;
+  return '#' + (0x1000000 + (Math.round((t - R) * p) + R) * 0x10000 + (Math.round((t - G) * p) + G) * 0x100 + (Math.round((t - B) * p) + B)).toString(16).slice(1);
+}
+
+function svgDonut(byStatus, total, w, h){
+  // Diagram pie 3D "isometrik" dengan irisan terpisah (exploded), gaya ilustrasi.
+  w = w || 240; h = h || 210;
+  const cx = w / 2, cy = h * 0.42;
+  const rx = w * 0.35, ry = rx * 0.52;
+  const depth = h * 0.16;   // ketebalan sisi 3D
+  const explode = w * 0.045; // jarak pemisahan tiap irisan dari pusat
+
+  const entries = Object.entries(byStatus);
+  let acc = -Math.PI / 2; // mulai dari atas
+  const sides = [];
+  const tops = [];
+
+  entries.forEach(([k, v]) => {
     const hex = (STATUS_CFG[k] || {}).hex || '#8A93A6';
-    return `<linearGradient id="dg-${i}" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="${hex}" stop-opacity=".82"/>
-      <stop offset="100%" stop-color="${hex}"/>
-    </linearGradient>`;
-  }).join('');
-  const segs = Object.entries(byStatus).map(([k, v], i) => {
-    const dash = Math.max((v / total) * c - gap, 0);
-    const circle = `<circle class="donut-seg" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#dg-${i})" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${dash} ${c - dash}" stroke-dashoffset="${-offsetAcc}"><title>${k}: ${Math.round(v/total*100)}%</title></circle>`;
-    offsetAcc += (v / total) * c;
-    return circle;
-  }).join('');
-  return `<svg class="donut-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg)">
-    <defs>${defs}</defs>
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--paper)" stroke-width="${strokeWidth}"/>
-    ${segs}
+    const frac = total ? v / total : 0;
+    const a0 = acc, a1 = acc + frac * Math.PI * 2;
+    acc = a1;
+    if(frac <= 0) return;
+
+    const mid = (a0 + a1) / 2;
+    const exCx = cx + explode * Math.cos(mid);
+    const exCy = cy + explode * Math.sin(mid) * (ry / rx);
+
+    const pt = (ang) => [exCx + rx * Math.cos(ang), exCy + ry * Math.sin(ang)];
+    const [x0, y0] = pt(a0);
+    const [x1, y1] = pt(a1);
+    const largeArc = (a1 - a0) > Math.PI ? 1 : 0;
+
+    const sideColor = shadeColor(hex, -0.28);
+    const topColorLight = shadeColor(hex, 0.06);
+
+    sides.push(`<path d="M ${x0} ${y0} A ${rx} ${ry} 0 ${largeArc} 1 ${x1} ${y1} L ${x1} ${y1 + depth} A ${rx} ${ry} 0 ${largeArc} 1 ${x0} ${y0 + depth} Z" fill="${sideColor}" stroke="rgba(0,0,0,.12)" stroke-width="1"/>`);
+    tops.push(`<path class="donut-seg" d="M ${exCx} ${exCy} L ${x0} ${y0} A ${rx} ${ry} 0 ${largeArc} 1 ${x1} ${y1} Z" fill="${topColorLight}" stroke="rgba(255,255,255,.55)" stroke-width="1.5" stroke-linejoin="round"><title>${k}: ${Math.round(frac*100)}%</title></path>`);
+  });
+
+  return `<svg class="donut-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    ${sides.join('')}
+    ${tops.join('')}
   </svg>`;
 }
 
@@ -968,9 +990,8 @@ function renderDashboard(){
         <h2><span style="display:flex;align-items:center;gap:7px;"><span style="width:16px;height:16px;color:var(--good);display:inline-flex;">${icon('check')}</span>Aset per Status</span></h2>
         ${s.total ? `
         <div class="donut-wrap">
-          <div style="position:relative;width:172px;height:172px;flex-shrink:0;">
+          <div style="position:relative;width:220px;height:190px;flex-shrink:0;">
             ${svgDonut(s.byStatus, s.total)}
-            <div class="donut-center"><div class="n">${s.total}</div><div class="t">ASET</div></div>
           </div>
           <div class="legend">
             ${Object.entries(s.byStatus).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
