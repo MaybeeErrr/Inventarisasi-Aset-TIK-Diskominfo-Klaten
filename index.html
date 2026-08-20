@@ -438,6 +438,7 @@ let state = {
   assets: [],
   loaded: false,
   view: 'dashboard',
+  navFrom: null,
   search: '',
   filterKategori: 'Semua',
   filterStatus: 'Semua',
@@ -926,30 +927,32 @@ async function bulkSetStatus(status){
   if(ok) showToast(`Status ${n} aset diperbarui`);
 }
 
-function setView(v){ state.view=v; state.selectedIds.clear(); render(); }
+function setView(v, origin=null){ state.view=v; state.navFrom=origin; state.selectedIds.clear(); render(); }
 
 // Navigasi cepat dari kartu ringkasan Dashboard: klik kartu -> langsung ke
 // Daftar Aset dengan filter status yang sesuai (mis. hanya "Baik", atau
 // "Perlu Perhatian" yang mencakup semua kondisi selain Baik).
 function gotoStatusFilter(status){
+  const origin = state.view;
   state.filterKategori = 'Semua';
   state.filterStatus = status;
   state.filterLokasi = 'Semua';
   state.search = '';
-  setView('daftar');
+  setView('daftar', origin);
 }
 // Klik kartu "Kategori Terdata" -> halaman rincian per kategori.
-function gotoKategoriView(){ setView('kategori'); }
+function gotoKategoriView(){ setView('kategori', 'dashboard'); }
 // Klik satu kategori di halaman rincian -> Daftar Aset difilter kategori itu.
 function gotoKategoriFilter(kategori){
+  const origin = state.view;
   state.filterKategori = kategori;
   state.filterStatus = 'Semua';
   state.filterLokasi = 'Semua';
   state.search = '';
-  setView('daftar');
+  setView('daftar', origin);
 }
 // Klik banner "Total Nilai Aset" -> halaman rincian nilai aset.
-function gotoNilaiView(){ setView('nilai'); }
+function gotoNilaiView(){ setView('nilai', 'dashboard'); }
 
 function onSearchInput(val){ state.search = val; render(); }
 
@@ -1273,9 +1276,14 @@ function renderDaftar(){
   const filtered = filteredAssets();
   const list = sortedAssets(filtered);
   const allChecked = list.length>0 && list.every(a=>state.selectedIds.has(a.id));
+  const backLabels = {dashboard:'Dashboard', kategori:'Kategori Aset', nilai:'Nilai Aset'};
+  const backLabel = backLabels[state.navFrom];
   return `
   <div class="topbar">
-    <div><h1>Daftar Aset TIK</h1><p>${state.assets.length} aset terdata &middot; menampilkan ${list.length}</p></div>
+    <div>
+      ${backLabel ? `<button class="btn btn-ghost btn-sm" onclick="setView('${state.navFrom}')" style="margin-bottom:8px;">${icon('arrowLeft')}Kembali ke ${backLabel}</button>` : ''}
+      <h1>Daftar Aset TIK</h1><p>${state.assets.length} aset terdata &middot; menampilkan ${list.length}</p>
+    </div>
     <div class="topbar-actions">
       <input id="csv-input" type="file" accept=".csv" style="display:none" onchange="handleImportFile(event)">
       <button class="btn btn-ghost" onclick="triggerImport()">${icon('upload')}Impor CSV</button>
