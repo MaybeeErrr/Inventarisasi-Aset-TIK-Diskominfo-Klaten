@@ -30,26 +30,51 @@
   .app{display:flex;min-height:640px;}
   #print-report{display:none;}
 
+  /* Scrollbar halus, biar konsisten dengan tema */
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#C7D0DD;border-radius:20px;border:2px solid var(--paper);}
+  ::-webkit-scrollbar-thumb:hover{background:#A9B5C6;}
+
   @media (prefers-reduced-motion: no-preference){
-    .fade-up{animation:fadeUp .45s ease both;}
+    .fade-up{animation:fadeUp .45s cubic-bezier(.22,.9,.3,1) both;}
+    .view-anim{animation:viewFade .38s cubic-bezier(.22,.9,.3,1) both;}
+    .row-anim{animation:rowIn .32s ease both;}
   }
   @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes viewFade{from{opacity:0;transform:translateY(10px) scale(.995);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes rowIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:translateX(0);}}
+  @keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(66,209,140,.55);}70%{box-shadow:0 0 0 6px rgba(66,209,140,0);}100%{box-shadow:0 0 0 0 rgba(66,209,140,0);}}
+  @keyframes shimmerPan{0%{background-position:0% 50%;}100%{background-position:200% 50%;}}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes toastIn{from{opacity:0;transform:translateY(14px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes toastShrink{from{width:100%;}to{width:0%;}}
+  @keyframes softFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
 
   /* Sidebar */
-  .sidebar{width:230px;flex-shrink:0;background:var(--navy-900);color:#fff;display:flex;flex-direction:column;padding:22px 16px;}
+  .sidebar{width:230px;flex-shrink:0;background:var(--navy-900);color:#fff;display:flex;flex-direction:column;padding:22px 16px;position:relative;}
   .brand{display:flex;align-items:center;gap:10px;margin-bottom:28px;padding:0 4px;}
-  .brand-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--blue-500),var(--navy-700));display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;flex-shrink:0;}
+  .brand-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--blue-500),var(--navy-700));display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;flex-shrink:0;box-shadow:0 4px 14px rgba(59,125,191,.35);transition:transform .35s cubic-bezier(.34,1.56,.64,1);}
+  .brand:hover .brand-mark{transform:rotate(-8deg) scale(1.08);}
   .brand-text{line-height:1.2;}
   .brand-text .t1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;letter-spacing:.02em;}
   .brand-text .t2{font-size:10.5px;color:#9FB3CC;margin-top:1px;}
   .nav{display:flex;flex-direction:column;gap:3px;}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;color:#C4D2E5;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;text-align:left;width:100%;font-family:inherit;position:relative;}
-  .nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.85;}
-  .nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
-  .nav-item.active{background:var(--blue-500);color:#fff;}
-  .nav-item .count{margin-left:auto;font-size:10.5px;font-weight:700;background:rgba(255,255,255,.14);padding:1px 6px;border-radius:20px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;color:#C4D2E5;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;text-align:left;width:100%;font-family:inherit;position:relative;transition:background .18s ease,color .18s ease,transform .12s ease;}
+  .nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.85;transition:transform .25s cubic-bezier(.34,1.56,.64,1);}
+  .nav-item:hover{background:rgba(255,255,255,.07);color:#fff;}
+  .nav-item:hover svg{transform:translateX(1px) scale(1.08);}
+  .nav-item:active{transform:scale(.97);}
+  .nav-item.active{background:var(--blue-500);color:#fff;box-shadow:0 4px 12px rgba(59,125,191,.35);}
+  .nav-item.active::before{content:'';position:absolute;left:-16px;top:50%;transform:translateY(-50%);width:3px;height:18px;border-radius:0 3px 3px 0;background:#fff;}
+  .nav-item .count{margin-left:auto;font-size:10.5px;font-weight:700;background:rgba(255,255,255,.14);padding:1px 6px;border-radius:20px;transition:background .18s ease;}
   .sidebar-foot{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);font-size:10.5px;color:#7C8CA6;line-height:1.5;}
-  .badge-share{font-size:10.5px;color:#9FB3CC;background:rgba(255,255,255,.08);padding:3px 8px;border-radius:20px;display:inline-block;margin-top:10px;}
+  .badge-share{font-size:10.5px;color:#9FB3CC;background:rgba(255,255,255,.08);padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;margin-top:10px;}
+  .badge-share .live-dot{width:6px;height:6px;border-radius:50%;background:#42D18C;flex-shrink:0;animation:pulseDot 2s infinite;}
+  .logout-btn{display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;padding:8px 10px;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#C4D2E5;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:background .18s ease,color .18s ease,transform .12s ease;}
+  .logout-btn svg{width:14px;height:14px;}
+  .logout-btn:hover{background:rgba(196,69,61,.18);color:#ffb3ae;}
+  .logout-btn:active{transform:scale(.97);}
 
   /* Main */
   .main{flex:1;display:flex;flex-direction:column;min-width:0;}
@@ -59,15 +84,17 @@
   .content{padding:22px 26px;overflow:auto;}
   .topbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
 
-  .btn{display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-weight:600;font-size:13px;border-radius:7px;padding:8px 14px;cursor:pointer;border:1px solid transparent;white-space:nowrap;}
-  .btn svg{width:14px;height:14px;}
+  .btn{display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-weight:600;font-size:13px;border-radius:7px;padding:8px 14px;cursor:pointer;border:1px solid transparent;white-space:nowrap;transition:background .16s ease,transform .12s ease,box-shadow .16s ease,border-color .16s ease;}
+  .btn svg{width:14px;height:14px;transition:transform .2s ease;}
   .btn-primary{background:var(--navy-700);color:#fff;}
-  .btn-primary:hover{background:var(--navy-800);}
+  .btn-primary:hover{background:var(--navy-800);box-shadow:0 6px 16px rgba(15,35,64,.25);transform:translateY(-1px);}
+  .btn-primary:hover svg{transform:rotate(90deg);}
   .btn-ghost{background:#fff;border-color:var(--line);color:var(--ink);}
-  .btn-ghost:hover{background:var(--paper);}
+  .btn-ghost:hover{background:var(--paper);border-color:#C7D0DD;transform:translateY(-1px);}
   .btn-danger{background:var(--bad-bg);color:var(--bad);}
   .btn-danger:hover{background:#f6d4d2;}
   .btn-sm{padding:6px 10px;font-size:12px;}
+  .btn:active{transform:translateY(0) scale(.97);}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
 
   /* Dashboard cards */
@@ -93,13 +120,14 @@
 
   /* Banner "Total Nilai Aset" — sengaja dibuat menonjol (bukan kartu kecil yang
      nyempil sendirian di baris baru) supaya terlihat seperti sorotan, bukan sisa. */
-  .value-banner{background:linear-gradient(120deg,var(--navy-900),var(--navy-700) 70%);border-radius:14px;padding:22px 26px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;box-shadow:0 12px 30px rgba(15,35,64,.20);position:relative;overflow:hidden;}
+  .value-banner{background:linear-gradient(120deg,var(--navy-900),var(--navy-700) 45%,var(--blue-500) 100%);background-size:220% 220%;animation:shimmerPan 9s ease-in-out infinite alternate;border-radius:14px;padding:22px 26px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;box-shadow:0 12px 30px rgba(15,35,64,.20);position:relative;overflow:hidden;transition:box-shadow .25s ease;}
+  .value-banner:hover{box-shadow:0 16px 38px rgba(15,35,64,.30);}
   .value-banner::before{content:'';position:absolute;inset:0;background:
       radial-gradient(circle at 85% 15%, rgba(255,255,255,.08), transparent 45%),
       repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 2px, transparent 2px 26px);}
   .value-banner::after{content:'';position:absolute;right:-50px;top:-50px;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.05);}
   .value-banner .vb-left{display:flex;align-items:center;gap:16px;position:relative;z-index:1;}
-  .value-banner .vb-icon{width:48px;height:48px;border-radius:13px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);}
+  .value-banner .vb-icon{width:48px;height:48px;border-radius:13px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);animation:softFloat 3.6s ease-in-out infinite;}
   .value-banner .vb-icon svg{width:23px;height:23px;color:#fff;}
   .value-banner .vb-lbl{font-size:11.5px;color:#9FB3CC;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
   .value-banner .vb-val{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;color:#fff;margin-top:3px;letter-spacing:-.01em;}
@@ -122,6 +150,7 @@
   .donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
   .donut-svg{flex-shrink:0;filter:drop-shadow(0 4px 10px rgba(15,35,64,.10));}
   .donut-svg circle{transition:stroke-width .15s ease;}
+  .donut-svg .donut-seg{transition:stroke-dasharray 1s cubic-bezier(.22,.9,.3,1);}
   .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
   .donut-center .n{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;}
   .donut-center .t{font-size:9.5px;color:var(--ink-soft);letter-spacing:.06em;font-weight:600;}
@@ -165,8 +194,10 @@
   th.sortable:hover{color:var(--ink);}
   th.sortable .arrow{margin-left:3px;opacity:.6;}
   tbody td{padding:11px 10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle;}
-  tbody tr{cursor:pointer;}
-  tbody tr:hover{background:var(--paper);}
+  tbody tr{cursor:pointer;transition:background .14s ease,transform .14s ease;}
+  tbody tr:hover{background:var(--paper);transform:translateX(2px);}
+  .icon-btn{transition:background .15s ease,color .15s ease,transform .15s ease;}
+  .icon-btn:active{transform:scale(.92);}
   .cat-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;}
   .tag-code{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;background:var(--blue-100);color:var(--navy-700);padding:3px 7px;border-radius:5px;letter-spacing:.02em;}
   .status-pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:20px;white-space:nowrap;}
@@ -189,12 +220,19 @@
   .form-field{display:flex;flex-direction:column;gap:5px;}
   .form-field.full{grid-column:1/-1;}
   .form-field label{font-size:12px;font-weight:600;color:var(--ink-soft);}
-  .form-field input,.form-field select,.form-field textarea{padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-family:inherit;font-size:13px;color:var(--ink);}
-  .form-field input:focus,.form-field select:focus,.form-field textarea:focus{outline:2px solid var(--blue-500);outline-offset:1px;}
+  .form-field input,.form-field select,.form-field textarea{padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-family:inherit;font-size:13px;color:var(--ink);transition:border-color .15s ease,box-shadow .15s ease;}
+  .form-field input:focus,.form-field select:focus,.form-field textarea:focus{outline:none;border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(59,125,191,.15);}
   .form-field textarea{resize:vertical;min-height:56px;}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
-  .toast{position:fixed;bottom:20px;right:20px;background:var(--navy-900);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;}
+  .overlay{animation:fadeUp .18s ease both;}
+  .overlay .modal{animation:toastIn .22s cubic-bezier(.22,.9,.3,1) both;}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--navy-900);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;z-index:60;box-shadow:0 12px 30px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:0;overflow:hidden;animation:toastIn .32s cubic-bezier(.22,.9,.3,1) both;}
+  .toast .toast-row{display:flex;align-items:center;gap:8px;padding-bottom:9px;}
   .toast svg{width:15px;height:15px;color:var(--good);flex-shrink:0;}
+  .toast.toast-error svg{color:#ff9a94;}
+  .toast .toast-bar{height:2.5px;background:rgba(255,255,255,.18);border-radius:2px;margin:0 -16px -10px;overflow:hidden;}
+  .toast .toast-bar::after{content:'';display:block;height:100%;background:var(--good);animation:toastShrink 2.6s linear forwards;}
+  .toast.toast-error .toast-bar::after{background:#ff6b62;}
 
   /* Detail modal */
   .detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;}
@@ -234,6 +272,11 @@
     #print-report, #print-report *{visibility:visible;}
     #print-report{display:block;position:absolute;top:0;left:0;width:100%;padding:20px;}
   }
+
+  /* Loading state */
+  .loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:640px;width:100%;color:var(--ink-soft);}
+  .spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--blue-100);border-top-color:var(--navy-700);animation:spin .8s linear infinite;}
+  .loading-screen .lt{font-size:13px;font-weight:500;}
 </style>
 
 <div id="root" class="app"></div>
@@ -245,9 +288,22 @@
 // Interface-nya sengaja dibuat sama persis (get/set mengembalikan
 // {key, value, shared} atau null) supaya logic loadData()/persist() di
 // bawah tidak perlu diubah sama sekali.
+function redirectIfLoggedOut(res){
+  // Kalau sesi login sudah habis, middleware di server akan mengalihkan
+  // permintaan API ini ke halaman login (isinya HTML, bukan JSON). Deteksi
+  // itu di sini supaya pengguna diarahkan balik ke /login.html dengan rapi,
+  // bukan melihat error "Gagal mengambil/menyimpan data" yang membingungkan.
+  const ct = res.headers.get('content-type') || '';
+  if(res.redirected || ct.includes('text/html')){
+    window.location.href = '/login.html';
+    return true;
+  }
+  return false;
+}
 window.storage = {
   async get(key){
     const res = await fetch('/api/storage?key=' + encodeURIComponent(key));
+    if(redirectIfLoggedOut(res)) return await new Promise(()=>{});
     if(res.status === 404) return null;
     if(!res.ok) throw new Error('Gagal mengambil data dari server');
     return await res.json();
@@ -258,10 +314,15 @@ window.storage = {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({key, value})
     });
+    if(redirectIfLoggedOut(res)) return await new Promise(()=>{});
     if(!res.ok) throw new Error('Gagal menyimpan data ke server');
     return await res.json();
   }
 };
+async function logout(){
+  try{ await fetch('/api/logout', {method:'POST'}); }catch(e){}
+  window.location.href = '/login.html';
+}
 
 const STATUS_CFG = {
   'Baik': {color:'good', hex:'#2F9E6E'},
@@ -439,6 +500,7 @@ function icon(name){
     printer:'<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/>',
     clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
     x:'<path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/>',
+    logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
   };
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${icons[name]||''}</svg>`;
 }
@@ -789,7 +851,8 @@ function renderSidebar(){
     </div>
     <div class="sidebar-foot">
       Data tersimpan otomatis dan dibagikan ke seluruh pengguna sistem ini.
-      <span class="badge-share">🔗 Data bersama (shared)</span>
+      <span class="badge-share"><span class="live-dot"></span>Data bersama (shared)</span>
+      <button class="logout-btn" onclick="logout()">${icon('logout')}Keluar</button>
     </div>
   </div>`;
 }
@@ -804,7 +867,7 @@ function svgDonut(byStatus, total, size, strokeWidth){
   const segs = Object.entries(byStatus).map(([k, v]) => {
     const hex = (STATUS_CFG[k] || {}).hex || '#8A93A6';
     const dash = Math.max((v / total) * c - gap, 0);
-    const circle = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${hex}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${dash} ${c - dash}" stroke-dashoffset="${-offsetAcc}"/>`;
+    const circle = `<circle class="donut-seg" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${hex}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${dash} ${c - dash}" stroke-dashoffset="${-offsetAcc}"/>`;
     offsetAcc += (v / total) * c;
     return circle;
   }).join('');
@@ -845,19 +908,19 @@ function renderDashboard(){
     <div class="stat-grid">
       <div class="stat-card c-total fade-up" style="animation-delay:0ms">
         <div class="top-row"><div class="lbl">Total Aset</div><div class="icon-chip">${icon('box')}</div></div>
-        <div class="val">${s.total}</div><div class="sub">Terdata dalam sistem</div>
+        <div class="val" data-countup="${s.total}">0</div><div class="sub">Terdata dalam sistem</div>
       </div>
       <div class="stat-card c-good fade-up" style="animation-delay:40ms">
         <div class="top-row"><div class="lbl">Kondisi Baik</div><div class="icon-chip">${icon('check')}</div></div>
-        <div class="val" style="color:var(--good)">${s.baik}</div><div class="sub">${s.total?Math.round(s.baik/s.total*100):0}% dari total</div>
+        <div class="val" style="color:var(--good)" data-countup="${s.baik}">0</div><div class="sub">${s.total?Math.round(s.baik/s.total*100):0}% dari total</div>
       </div>
       <div class="stat-card c-warn fade-up" style="animation-delay:80ms">
         <div class="top-row"><div class="lbl">Perlu Perhatian</div><div class="icon-chip">${icon('alert')}</div></div>
-        <div class="val" style="color:var(--warn)">${s.perluPerhatian}</div><div class="sub">Rusak, perbaikan, tidak aktif</div>
+        <div class="val" style="color:var(--warn)" data-countup="${s.perluPerhatian}">0</div><div class="sub">Rusak, perbaikan, tidak aktif</div>
       </div>
       <div class="stat-card c-cat fade-up" style="animation-delay:120ms">
         <div class="top-row"><div class="lbl">Kategori Terdata</div><div class="icon-chip">${icon('layers')}</div></div>
-        <div class="val">${Object.keys(s.byKategori).length}</div><div class="sub">Jenis aset berbeda</div>
+        <div class="val" data-countup="${Object.keys(s.byKategori).length}">0</div><div class="sub">Jenis aset berbeda</div>
       </div>
     </div>
     <div class="value-banner fade-up" style="animation-delay:160ms">
@@ -865,7 +928,7 @@ function renderDashboard(){
         <div class="vb-icon">${icon('box')}</div>
         <div>
           <div class="vb-lbl">Total Nilai Aset</div>
-          <div class="vb-val">${fmtRupiah(s.totalNilai)}</div>
+          <div class="vb-val" data-countup="${s.totalNilai}" data-countup-rupiah="1">Rp0</div>
         </div>
       </div>
       <div class="vb-sub">Estimasi nilai perolehan dari<br>${s.total} aset terdata</div>
@@ -1157,6 +1220,28 @@ function renderConfirmBulkDelete(){
 
 function escapeAttr(s){ return String(s||'').replace(/"/g,'&quot;'); }
 
+function animateCountUps(){
+  document.querySelectorAll('[data-countup]').forEach(el=>{
+    const target = Number(el.getAttribute('data-countup')) || 0;
+    const isRupiah = el.hasAttribute('data-countup-rupiah');
+    const dur = 700;
+    const t0 = performance.now();
+    function frame(t){
+      const p = Math.min(1, (t - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+      const val = Math.round(target * eased);
+      el.textContent = isRupiah ? fmtRupiah(val) : val.toLocaleString('id-ID');
+      if(p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+// Hanya dipakai untuk memicu animasi masuk yang lebih terasa saat BERPINDAH
+// menu (dashboard/daftar/aktivitas) — sengaja TIDAK dipicu pada render biasa
+// (mis. saat mengetik di kotak pencarian) supaya tidak berkedip-kedip.
+let lastRenderedView = null;
+
 function renderApp(){
   const root = document.getElementById('root');
 
@@ -1168,19 +1253,25 @@ function renderApp(){
   const selEnd = (active && typeof active.selectionEnd==='number') ? active.selectionEnd : null;
 
   if(!state.loaded){
-    root.innerHTML = `<div style="padding:40px;color:var(--ink-soft);">Memuat data aset...</div>`;
+    root.innerHTML = `<div class="loading-screen"><div class="spinner"></div><div class="lt">Memuat data aset...</div></div>`;
     return;
   }
+
+  const viewChanged = lastRenderedView !== state.view;
+  lastRenderedView = state.view;
+
   root.innerHTML = `
     ${renderSidebar()}
     <div class="main">
+      <div ${viewChanged ? 'class="view-anim"' : ''}>
       ${state.view==='dashboard' ? renderDashboard() : state.view==='aktivitas' ? renderAktivitas() : renderDaftar()}
+      </div>
     </div>
     ${renderModal()}
     ${renderDetail()}
     ${renderConfirmDelete()}
     ${renderConfirmBulkDelete()}
-    ${state.toast ? `<div class="toast">${icon('check')}${state.toast.msg}</div>` : ''}
+    ${state.toast ? `<div class="toast ${state.toast.type==='error'?'toast-error':''}"><div class="toast-row">${icon(state.toast.type==='error'?'alert':'check')}${state.toast.msg}</div><div class="toast-bar"></div></div>` : ''}
   `;
 
   if(activeId){
@@ -1192,6 +1283,8 @@ function renderApp(){
       }
     }
   }
+
+  if(state.view==='dashboard') animateCountUps();
 }
 function render(){ renderApp(); }
 
