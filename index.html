@@ -879,44 +879,65 @@ function shadeColor(hex, percent){
 }
 
 function svgDonut(byStatus, total, w, h){
-  // Diagram pie 3D "isometrik" dengan irisan terpisah (exploded), gaya ilustrasi.
-  w = w || 240; h = h || 210;
-  const cx = w / 2, cy = h * 0.42;
-  const rx = w * 0.35, ry = rx * 0.52;
-  const depth = h * 0.16;   // ketebalan sisi 3D
-  const explode = w * 0.045; // jarak pemisahan tiap irisan dari pusat
+  // Diagram pie 3D "isometrik" dengan irisan terpisah (exploded) + label persentase langsung di diagram.
+  w = w || 300; h = h || 230;
+  const cx = w * 0.40, cy = h * 0.44;
+  const rx = w * 0.225, ry = rx * 0.55;
+  const depth = h * 0.15;    // ketebalan sisi 3D
+  const explode = w * 0.05;  // jarak pemisahan tiap irisan dari pusat
 
-  const entries = Object.entries(byStatus);
+  // Urutkan dari terbesar ke terkecil biar alur diagram sama dengan urutan di legenda.
+  const entries = Object.entries(byStatus).sort((a, b) => b[1] - a[1]);
   let acc = -Math.PI / 2; // mulai dari atas
-  const sides = [];
-  const tops = [];
+  const sides = [], tops = [], labels = [];
 
   entries.forEach(([k, v]) => {
     const hex = (STATUS_CFG[k] || {}).hex || '#8A93A6';
     const frac = total ? v / total : 0;
+    if(frac <= 0) return;
     const a0 = acc, a1 = acc + frac * Math.PI * 2;
     acc = a1;
-    if(frac <= 0) return;
-
     const mid = (a0 + a1) / 2;
+
     const exCx = cx + explode * Math.cos(mid);
     const exCy = cy + explode * Math.sin(mid) * (ry / rx);
 
-    const pt = (ang) => [exCx + rx * Math.cos(ang), exCy + ry * Math.sin(ang)];
+    const pt = (ang, rxo, ryo) => [exCx + (rxo!=null?rxo:rx) * Math.cos(ang), exCy + (ryo!=null?ryo:ry) * Math.sin(ang)];
     const [x0, y0] = pt(a0);
     const [x1, y1] = pt(a1);
     const largeArc = (a1 - a0) > Math.PI ? 1 : 0;
+    const pct = Math.round(frac * 100);
 
     const sideColor = shadeColor(hex, -0.28);
     const topColorLight = shadeColor(hex, 0.06);
 
     sides.push(`<path d="M ${x0} ${y0} A ${rx} ${ry} 0 ${largeArc} 1 ${x1} ${y1} L ${x1} ${y1 + depth} A ${rx} ${ry} 0 ${largeArc} 1 ${x0} ${y0 + depth} Z" fill="${sideColor}" stroke="rgba(0,0,0,.12)" stroke-width="1"/>`);
-    tops.push(`<path class="donut-seg" d="M ${exCx} ${exCy} L ${x0} ${y0} A ${rx} ${ry} 0 ${largeArc} 1 ${x1} ${y1} Z" fill="${topColorLight}" stroke="rgba(255,255,255,.55)" stroke-width="1.5" stroke-linejoin="round"><title>${k}: ${Math.round(frac*100)}%</title></path>`);
+    tops.push(`<path class="donut-seg" d="M ${exCx} ${exCy} L ${x0} ${y0} A ${rx} ${ry} 0 ${largeArc} 1 ${x1} ${y1} Z" fill="${topColorLight}" stroke="rgba(255,255,255,.65)" stroke-width="1.5" stroke-linejoin="round"><title>${k}: ${pct}%</title></path>`);
+
+    if(frac >= 0.28){
+      // Irisan besar: taruh persentase langsung di tengah irisan, teks putih tebal.
+      const [lx, ly] = pt(mid, rx * 0.56, ry * 0.56);
+      labels.push(`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="15" fill="#fff" style="paint-order:stroke; stroke:rgba(0,0,0,.22); stroke-width:2.5px;">${pct}%</text>`);
+    } else {
+      // Irisan kecil: garis penunjuk keluar ke label agar tidak berdesakan.
+      const edge = pt(mid);
+      const dirX = Math.cos(mid), dirY = Math.sin(mid) * (ry / rx);
+      const len = Math.hypot(dirX, dirY) || 1;
+      const ux = dirX / len, uy = dirY / len;
+      const midPt = [edge[0] + ux * 16, edge[1] + uy * 16];
+      const endPt = [edge[0] + ux * 30, edge[1] + uy * 30];
+      const anchor = ux > 0.15 ? 'start' : (ux < -0.15 ? 'end' : 'middle');
+      const tx = endPt[0] + (anchor === 'start' ? 4 : anchor === 'end' ? -4 : 0);
+      labels.push(`<polyline points="${edge[0]},${edge[1]} ${midPt[0]},${midPt[1]} ${endPt[0]},${endPt[1]}" fill="none" stroke="${hex}" stroke-width="1.5"/>`);
+      labels.push(`<circle cx="${edge[0]}" cy="${edge[1]}" r="2.5" fill="${hex}"/>`);
+      labels.push(`<text x="${tx}" y="${endPt[1]}" text-anchor="${anchor}" dominant-baseline="middle" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="13" fill="${hex}" style="paint-order:stroke; stroke:#fff; stroke-width:3px;">${pct}%</text>`);
+    }
   });
 
   return `<svg class="donut-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
     ${sides.join('')}
     ${tops.join('')}
+    ${labels.join('')}
   </svg>`;
 }
 
@@ -990,7 +1011,7 @@ function renderDashboard(){
         <h2><span style="display:flex;align-items:center;gap:7px;"><span style="width:16px;height:16px;color:var(--good);display:inline-flex;">${icon('check')}</span>Aset per Status</span></h2>
         ${s.total ? `
         <div class="donut-wrap">
-          <div style="position:relative;width:220px;height:190px;flex-shrink:0;">
+          <div style="position:relative;width:300px;height:230px;flex-shrink:0;">
             ${svgDonut(s.byStatus, s.total)}
           </div>
           <div class="legend">
