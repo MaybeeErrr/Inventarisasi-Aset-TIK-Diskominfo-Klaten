@@ -120,6 +120,10 @@
   .stat-card.c-warn .icon-chip{background:var(--warn-bg);color:var(--warn);}
   .stat-card.c-cat{--accent-glow:rgba(6,182,212,.10);}
   .stat-card.c-cat .icon-chip{background:linear-gradient(135deg,var(--cyan),var(--blue-500));color:#fff;}
+  .stat-card.clickable,.value-banner.clickable{cursor:pointer;}
+  .stat-card.clickable:hover{border-color:var(--navy-700);}
+  .stat-card .sub svg,.vb-sub svg{width:10px;height:10px;vertical-align:-1px;margin-left:2px;opacity:.55;transition:transform .15s ease,opacity .15s ease;}
+  .stat-card.clickable:hover .sub svg,.value-banner.clickable:hover .vb-sub svg{opacity:1;transform:translateX(2px);}
 
   /* Banner "Total Nilai Aset" */
   .value-banner{background:linear-gradient(120deg,var(--navy-900),var(--navy-700) 50%,var(--blue-500) 100%);background-size:220% 220%;animation:shimmerPan 9s ease-in-out infinite alternate;border-radius:20px;padding:24px 28px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;box-shadow:0 16px 34px rgba(30,27,75,.24);position:relative;overflow:hidden;transition:box-shadow .25s ease;}
@@ -516,6 +520,9 @@ function icon(name){
     clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
     x:'<path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/>',
     logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+    arrowLeft:'<path d="M19 12H5" stroke-linecap="round"/><path d="m12 19-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/>',
+    arrowRight:'<path d="M5 12h14" stroke-linecap="round"/><path d="m12 5 7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>',
+    coin:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2c0-1 .9-1.7 2.5-1.7s2.5.8 2.5 1.7-1 1.4-2.5 1.8-2.5.8-2.5 1.8 1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/><path d="M12 6v1.3M12 16.7V18"/>',
   };
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${icons[name]||''}</svg>`;
 }
@@ -551,7 +558,9 @@ function filteredAssets(){
     const q = state.search.trim().toLowerCase();
     const matchQ = !q || [a.nama,a.kode,a.merk,a.noSeri,a.lokasi,a.penanggungJawab].join(' ').toLowerCase().includes(q);
     const matchK = state.filterKategori==='Semua' || a.kategori===state.filterKategori;
-    const matchS = state.filterStatus==='Semua' || a.status===state.filterStatus;
+    const matchS = state.filterStatus==='Semua' ? true
+      : state.filterStatus==='Perlu Perhatian' ? a.status!=='Baik'
+      : a.status===state.filterStatus;
     const matchL = state.filterLokasi==='Semua' || a.lokasi===state.filterLokasi;
     return matchQ && matchK && matchS && matchL;
   });
@@ -833,6 +842,29 @@ async function bulkSetStatus(status){
 
 function setView(v){ state.view=v; state.selectedIds.clear(); render(); }
 
+// Navigasi cepat dari kartu ringkasan Dashboard: klik kartu -> langsung ke
+// Daftar Aset dengan filter status yang sesuai (mis. hanya "Baik", atau
+// "Perlu Perhatian" yang mencakup semua kondisi selain Baik).
+function gotoStatusFilter(status){
+  state.filterKategori = 'Semua';
+  state.filterStatus = status;
+  state.filterLokasi = 'Semua';
+  state.search = '';
+  setView('daftar');
+}
+// Klik kartu "Kategori Terdata" -> halaman rincian per kategori.
+function gotoKategoriView(){ setView('kategori'); }
+// Klik satu kategori di halaman rincian -> Daftar Aset difilter kategori itu.
+function gotoKategoriFilter(kategori){
+  state.filterKategori = kategori;
+  state.filterStatus = 'Semua';
+  state.filterLokasi = 'Semua';
+  state.search = '';
+  setView('daftar');
+}
+// Klik banner "Total Nilai Aset" -> halaman rincian nilai aset.
+function gotoNilaiView(){ setView('nilai'); }
+
 function onSearchInput(val){ state.search = val; render(); }
 
 document.addEventListener('keydown', (e)=>{
@@ -965,24 +997,24 @@ function renderDashboard(){
   </div>
   <div class="content">
     <div class="stat-grid">
-      <div class="stat-card c-total fade-up" style="animation-delay:0ms">
+      <div class="stat-card c-total fade-up clickable" style="animation-delay:0ms" onclick="gotoStatusFilter('Semua')" role="button" tabindex="0">
         <div class="top-row"><div class="lbl">Total Aset</div><div class="icon-chip">${icon('box')}</div></div>
-        <div class="val" data-countup="${s.total}">0</div><div class="sub">Terdata dalam sistem</div>
+        <div class="val" data-countup="${s.total}">0</div><div class="sub">Terdata dalam sistem ${icon('arrowRight')}</div>
       </div>
-      <div class="stat-card c-good fade-up" style="animation-delay:40ms">
+      <div class="stat-card c-good fade-up clickable" style="animation-delay:40ms" onclick="gotoStatusFilter('Baik')" role="button" tabindex="0">
         <div class="top-row"><div class="lbl">Kondisi Baik</div><div class="icon-chip">${icon('check')}</div></div>
-        <div class="val" style="color:var(--good)" data-countup="${s.baik}">0</div><div class="sub">${s.total?Math.round(s.baik/s.total*100):0}% dari total</div>
+        <div class="val" style="color:var(--good)" data-countup="${s.baik}">0</div><div class="sub">${s.total?Math.round(s.baik/s.total*100):0}% dari total ${icon('arrowRight')}</div>
       </div>
-      <div class="stat-card c-warn fade-up" style="animation-delay:80ms">
+      <div class="stat-card c-warn fade-up clickable" style="animation-delay:80ms" onclick="gotoStatusFilter('Perlu Perhatian')" role="button" tabindex="0">
         <div class="top-row"><div class="lbl">Perlu Perhatian</div><div class="icon-chip">${icon('alert')}</div></div>
-        <div class="val" style="color:var(--warn)" data-countup="${s.perluPerhatian}">0</div><div class="sub">Rusak, perbaikan, tidak aktif</div>
+        <div class="val" style="color:var(--warn)" data-countup="${s.perluPerhatian}">0</div><div class="sub">Rusak, perbaikan, tidak aktif ${icon('arrowRight')}</div>
       </div>
-      <div class="stat-card c-cat fade-up" style="animation-delay:120ms">
+      <div class="stat-card c-cat fade-up clickable" style="animation-delay:120ms" onclick="gotoKategoriView()" role="button" tabindex="0">
         <div class="top-row"><div class="lbl">Kategori Terdata</div><div class="icon-chip">${icon('layers')}</div></div>
-        <div class="val" data-countup="${Object.keys(s.byKategori).length}">0</div><div class="sub">Jenis aset berbeda</div>
+        <div class="val" data-countup="${Object.keys(s.byKategori).length}">0</div><div class="sub">Jenis aset berbeda ${icon('arrowRight')}</div>
       </div>
     </div>
-    <div class="value-banner fade-up" style="animation-delay:160ms">
+    <div class="value-banner fade-up clickable" style="animation-delay:160ms" onclick="gotoNilaiView()" role="button" tabindex="0">
       <div class="vb-left">
         <div class="vb-icon">${icon('box')}</div>
         <div>
@@ -990,7 +1022,7 @@ function renderDashboard(){
           <div class="vb-val" data-countup="${s.totalNilai}" data-countup-rupiah="1">Rp0</div>
         </div>
       </div>
-      <div class="vb-sub">Estimasi nilai perolehan dari<br>${s.total} aset terdata</div>
+      <div class="vb-sub">Estimasi nilai perolehan dari<br>${s.total} aset terdata ${icon('arrowRight')}</div>
     </div>
     <div class="two-col">
       <div class="panel">
@@ -1046,8 +1078,96 @@ function renderDashboard(){
   </div>`;
 }
 
+function renderKategori(){
+  const s = computeStats();
+  const valueByKat = {};
+  state.assets.forEach(a=>{ valueByKat[a.kategori] = (valueByKat[a.kategori]||0) + (Number(a.hargaPerolehan)||0); });
+  const cats = Object.entries(s.byKategori).sort((a,b)=>b[1]-a[1]);
+  const maxK = Math.max(1, ...cats.map(([,v])=>v));
+  return `
+  <div class="topbar">
+    <div>
+      <button class="btn btn-ghost btn-sm" onclick="setView('dashboard')" style="margin-bottom:8px;">${icon('arrowLeft')}Kembali ke Dashboard</button>
+      <h1>Kategori Aset</h1><p>${cats.length} kategori terdata &middot; ${s.total} aset total</p>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr));">
+      ${cats.map(([k,v])=>{
+        const color = KATEGORI_COLOR[k]||'#8A93A6';
+        return `
+        <div class="stat-card clickable fade-up" style="--accent-glow:color-mix(in srgb, ${color} 12%, transparent);" onclick="gotoKategoriFilter('${k.replace(/'/g,"\\'")}')" role="button" tabindex="0">
+          <div class="top-row"><div class="lbl">${k}</div><div class="icon-chip" style="background:color-mix(in srgb, ${color} 18%, white);color:${color};">${icon('layers')}</div></div>
+          <div class="val" style="color:${color}">${v}</div>
+          <div class="sub">${fmtRupiah(valueByKat[k]||0)} &middot; aset ${icon('arrowRight')}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="panel">
+      <h2><span style="display:flex;align-items:center;gap:7px;"><span style="width:16px;height:16px;color:var(--blue-500);display:inline-flex;">${icon('layers')}</span>Perbandingan Jumlah per Kategori</span></h2>
+      ${cats.map(([k,v])=>`
+        <div class="bar-row" style="cursor:pointer;" onclick="gotoKategoriFilter('${k.replace(/'/g,"\\'")}')">
+          <div class="bar-lbl"><span class="dot" style="background:${KATEGORI_COLOR[k]||'#8A93A6'};color:${KATEGORI_COLOR[k]||'#8A93A6'}"></span>${k}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${v/maxK*100}%;background:linear-gradient(90deg, color-mix(in srgb, ${KATEGORI_COLOR[k]||'#8A93A6'} 78%, white), ${KATEGORI_COLOR[k]||'#8A93A6'})"></div></div>
+          <div class="bar-n" style="color:${KATEGORI_COLOR[k]||'#8A93A6'}">${v}</div>
+        </div>`).join('') || '<p style="color:var(--ink-soft);font-size:13px;">Belum ada data.</p>'}
+    </div>
+  </div>`;
+}
+
+function renderNilai(){
+  const s = computeStats();
+  const valueByKat = {};
+  state.assets.forEach(a=>{ valueByKat[a.kategori] = (valueByKat[a.kategori]||0) + (Number(a.hargaPerolehan)||0); });
+  const maxV = Math.max(1, ...Object.values(valueByKat));
+  const sortedByValue = [...state.assets].sort((a,b)=> (Number(b.hargaPerolehan)||0) - (Number(a.hargaPerolehan)||0));
+  return `
+  <div class="topbar">
+    <div>
+      <button class="btn btn-ghost btn-sm" onclick="setView('dashboard')" style="margin-bottom:8px;">${icon('arrowLeft')}Kembali ke Dashboard</button>
+      <h1>Nilai Aset</h1><p>Estimasi nilai perolehan dari ${s.total} aset terdata</p>
+    </div>
+  </div>
+  <div class="content">
+    <div class="value-banner fade-up">
+      <div class="vb-left">
+        <div class="vb-icon">${icon('coin')}</div>
+        <div>
+          <div class="vb-lbl">Total Nilai Aset</div>
+          <div class="vb-val" data-countup="${s.totalNilai}" data-countup-rupiah="1">Rp0</div>
+        </div>
+      </div>
+      <div class="vb-sub">Dihitung dari harga perolehan<br>seluruh aset terdata</div>
+    </div>
+    <div class="panel">
+      <h2><span style="display:flex;align-items:center;gap:7px;"><span style="width:16px;height:16px;color:var(--blue-500);display:inline-flex;">${icon('layers')}</span>Nilai per Kategori</span></h2>
+      ${Object.entries(valueByKat).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+        <div class="bar-row" style="cursor:pointer;" onclick="gotoKategoriFilter('${k.replace(/'/g,"\\'")}')">
+          <div class="bar-lbl"><span class="dot" style="background:${KATEGORI_COLOR[k]||'#8A93A6'};color:${KATEGORI_COLOR[k]||'#8A93A6'}"></span>${k}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${v/maxV*100}%;background:linear-gradient(90deg, color-mix(in srgb, ${KATEGORI_COLOR[k]||'#8A93A6'} 78%, white), ${KATEGORI_COLOR[k]||'#8A93A6'})"></div></div>
+          <div class="bar-n" style="width:auto;padding:2px 8px;color:${KATEGORI_COLOR[k]||'#8A93A6'}">${fmtRupiah(v)}</div>
+        </div>`).join('') || '<p style="color:var(--ink-soft);font-size:13px;">Belum ada data.</p>'}
+    </div>
+    <div class="panel">
+      <h2>Rincian Nilai per Aset <span style="font-weight:500;color:var(--ink-soft);font-size:12px;">(diurutkan dari nilai tertinggi)</span></h2>
+      ${sortedByValue.length ? `
+      <table>
+        <thead><tr><th style="width:34px;">#</th><th>Nama Aset</th><th>Kategori</th><th style="text-align:right;">Nilai (Rp)</th></tr></thead>
+        <tbody>
+          ${sortedByValue.map((a,i)=>`
+          <tr style="cursor:pointer;" onclick="openDetail('${a.id}')">
+            <td style="color:var(--ink-soft);">${i+1}</td>
+            <td><strong>${a.nama}</strong> <span class="tag-code" style="margin-left:4px;">${a.kode}</span></td>
+            <td><span class="cat-dot" style="background:${KATEGORI_COLOR[a.kategori]||'#8A93A6'};margin-right:6px;"></span>${a.kategori}</td>
+            <td style="text-align:right;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;">${fmtRupiah(a.hargaPerolehan)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>` : '<p style="color:var(--ink-soft);font-size:13px;">Belum ada data.</p>'}
+    </div>
+  </div>`;
+}
+
 function sortArrow(key){
-  if(state.sortKey!==key) return '';
   return `<span class="arrow">${state.sortDir==='asc'?'▲':'▼'}</span>`;
 }
 
@@ -1079,6 +1199,7 @@ function renderDaftar(){
       </select>
       <select class="filter" onchange="state.filterStatus=this.value; render()">
         <option ${state.filterStatus==='Semua'?'selected':''}>Semua</option>
+        <option ${state.filterStatus==='Perlu Perhatian'?'selected':''}>Perlu Perhatian</option>
         ${Object.keys(STATUS_CFG).map(k=>`<option ${state.filterStatus===k?'selected':''}>${k}</option>`).join('')}
       </select>
       <select class="filter" onchange="state.filterLokasi=this.value; render()">
@@ -1338,7 +1459,7 @@ function renderApp(){
     ${renderSidebar()}
     <div class="main">
       <div ${viewChanged ? 'class="view-anim"' : ''}>
-      ${state.view==='dashboard' ? renderDashboard() : state.view==='aktivitas' ? renderAktivitas() : renderDaftar()}
+      ${state.view==='dashboard' ? renderDashboard() : state.view==='aktivitas' ? renderAktivitas() : state.view==='kategori' ? renderKategori() : state.view==='nilai' ? renderNilai() : renderDaftar()}
       </div>
     </div>
     ${renderModal()}
@@ -1358,7 +1479,7 @@ function renderApp(){
     }
   }
 
-  if(state.view==='dashboard') animateCountUps();
+  if(state.view==='dashboard' || state.view==='nilai') animateCountUps();
 }
 function render(){ renderApp(); }
 
